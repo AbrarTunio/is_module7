@@ -1,0 +1,1612 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>User Authentication – Activity Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  color-scheme:light;
+  --bg:#f7fcf8; --surface:#ffffff; --surface-2:#eef8f1; --border:#d5ebdc; --border-strong:#b4d9c1;
+  --text:#14432f; --muted:#557565; --primary:#2e8b57; --primary-dark:#1d6b41; --primary-soft:#e2f4e8;
+  --primary-ink:#ffffff; --accent:#93d3ac; --good:#1d6b41; --good-soft:#e3f5ea; --bad:#b8423c; --bad-soft:#fcebe9;
+  --warn:#8a5d08; --warn-soft:#fff7e0; --warn-border:#efd99a; --rose:#d2556a; --amber:#e3a33a;
+  --topbar:rgba(255,255,255,.9); --shadow:0 1px 2px rgba(20,67,47,.05),0 12px 28px rgba(20,67,47,.07);
+  --btn-shadow:0 6px 16px rgba(46,139,87,.22); --token-bg:#1d5c3e; --token-screen:#dcf6e5; --code-bg:#f2f9f4;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#0f1a14; --surface:#15241c; --surface-2:#1a2d23; --border:#2a4437; --border-strong:#3b5f4c; --text:#e2f2e8; --muted:#9bbcab;
+    --primary:#52c38a; --primary-dark:#86dcae; --primary-soft:#1c3a2b; --primary-ink:#06140d; --accent:#3f8f66; --good:#86dcae; --good-soft:#173628;
+    --bad:#f28c82; --bad-soft:#3a1d1b; --warn:#f2c46a; --warn-soft:#33290f; --warn-border:#5c4a1c; --rose:#ef8597; --amber:#f0bd5c;
+    --topbar:rgba(21,36,28,.9); --shadow:0 1px 2px rgba(0,0,0,.3); --btn-shadow:none; --token-bg:#0b3a26; --token-screen:#cff1dd; --code-bg:#13201a;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#0f1a14; --surface:#15241c; --surface-2:#1a2d23; --border:#2a4437; --border-strong:#3b5f4c; --text:#e2f2e8; --muted:#9bbcab;
+  --primary:#52c38a; --primary-dark:#86dcae; --primary-soft:#1c3a2b; --primary-ink:#06140d; --accent:#3f8f66; --good:#86dcae; --good-soft:#173628;
+  --bad:#f28c82; --bad-soft:#3a1d1b; --warn:#f2c46a; --warn-soft:#33290f; --warn-border:#5c4a1c; --rose:#ef8597; --amber:#f0bd5c;
+  --topbar:rgba(21,36,28,.9); --shadow:0 1px 2px rgba(0,0,0,.3); --btn-shadow:none; --token-bg:#0b3a26; --token-screen:#cff1dd; --code-bg:#13201a;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-padding-top:calc(env(safe-area-inset-top,0px) + 80px)}
+body{
+  margin:0;min-height:100%;background:var(--bg);color:var(--text);
+  background-image:radial-gradient(900px 420px at 0% -8%,var(--primary-soft),transparent 65%),radial-gradient(700px 360px at 100% 0%,var(--surface-2),transparent 60%);
+  background-repeat:no-repeat;
+  font-family:"Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;font-size:17px;line-height:1.6;-webkit-font-smoothing:antialiased;
+}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--topbar);backdrop-filter:blur(10px)}
+img,svg{max-width:100%}
+h1,h2,h3,h4{font-family:"Bricolage Grotesque","Atkinson Hyperlegible",system-ui,sans-serif;line-height:1.15;margin:0 0 .5em;letter-spacing:-.015em;color:var(--text)}
+h1{font-size:clamp(2.1rem,5.5vw,3.4rem);font-weight:800}
+h2{font-size:clamp(1.4rem,3.2vw,1.9rem);font-weight:800}
+h3{font-size:1.2rem;font-weight:800}
+h4{font-size:1.02rem;font-weight:800}
+p{margin:0 0 .8em}
+b,strong{font-weight:700}
+.mono,code{font-family:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+code{font-size:.86em;background:var(--code-bg);border:1px solid var(--border);padding:.05em .4em;border-radius:6px;word-break:break-all}
+button{font-family:inherit}
+:focus-visible{outline:3px solid var(--primary);outline-offset:2px;border-radius:8px}
+.wrap{max-width:920px;margin:0 auto;padding:26px 20px 70px}
+.small{font-size:.9rem}.muted{color:var(--muted)}
+.row{display:flex;align-items:center;gap:10px}.row.wrap{flex-wrap:wrap}.between{justify-content:space-between}.end{justify-content:flex-end}.center{justify-content:center}
+.stack>*+*{margin-top:18px}
+
+/* Top bar */
+.topbar{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--topbar);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-bottom:1px solid var(--border)}
+.topbar-in{max-width:920px;margin:0 auto;padding:10px 20px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:10px;background:none;border:0;padding:0;cursor:pointer;color:var(--text);text-align:left}
+.brand:disabled{cursor:default}
+.brand-ic{width:36px;height:36px;border-radius:11px;background:var(--primary);color:var(--primary-ink);display:grid;place-items:center;font-size:18px;flex:none}
+.brand-t{font-family:"Bricolage Grotesque",sans-serif;font-weight:800;font-size:1.05rem;line-height:1.1}
+.brand-t small{display:block;font-family:"Atkinson Hyperlegible",sans-serif;font-weight:400;font-size:.8rem;color:var(--muted)}
+.tb-right{margin-left:auto;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.tb-prog{display:flex;align-items:center;gap:8px;font-size:.85rem;color:var(--muted);font-weight:700}
+.tb-prog .progress{width:90px}
+.student{display:flex;align-items:center;gap:8px;font-size:.88rem;line-height:1.2}
+.student small{display:block;color:var(--muted)}
+.avatar{width:32px;height:32px;border-radius:50%;background:var(--primary-soft);color:var(--primary-dark);display:grid;place-items:center;font-weight:700;border:1.5px solid var(--accent)}
+
+/* Cards and basics */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:20px;box-shadow:var(--shadow);padding:clamp(18px,3.6vw,32px)}
+.tag{display:inline-flex;align-items:center;gap:8px;font-size:.88rem;font-weight:700;color:var(--primary-dark);background:var(--primary-soft);padding:5px 12px;border-radius:999px}
+.lead{font-size:1.12rem;color:var(--muted)}
+.pill{display:inline-flex;align-items:center;gap:6px;font-size:.84rem;font-weight:700;padding:4px 11px;border-radius:999px;background:var(--surface-2);border:1px solid var(--border);color:var(--primary-dark)}
+.pill.warn{background:var(--warn-soft);border-color:var(--warn-border);color:var(--warn)}
+.progress{height:8px;background:var(--surface-2);border-radius:99px;overflow:hidden;border:1px solid var(--border)}
+.progress>i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--primary));border-radius:99px;transition:width .45s ease}
+.btn{appearance:none;border:0;border-radius:12px;padding:12px 20px;font-size:1rem;font-weight:700;cursor:pointer;background:var(--primary);color:var(--primary-ink);display:inline-flex;align-items:center;justify-content:center;gap:8px;transition:transform .12s,background .2s,box-shadow .2s;box-shadow:var(--btn-shadow);text-decoration:none}
+.btn:hover{background:var(--primary-dark)}
+.btn:active{transform:translateY(1px)}
+.btn:disabled{opacity:.5;cursor:not-allowed;box-shadow:none}
+.btn-ghost{background:transparent;color:var(--primary-dark);border:1.5px solid var(--border-strong);box-shadow:none}
+.btn-ghost:hover{background:var(--primary-soft)}
+.btn-soft{background:var(--primary-soft);color:var(--primary-dark);box-shadow:none;border:1px solid var(--border)}
+.btn-soft:hover{background:var(--surface-2);border-color:var(--primary)}
+.btn-skip{background:var(--surface-2);color:var(--muted);box-shadow:none;border:1px solid var(--border)}
+.btn-skip:hover{background:var(--primary-soft);color:var(--primary-dark)}
+.btn-sm{padding:8px 14px;font-size:.92rem;border-radius:10px}
+.field{display:flex;flex-direction:column;gap:6px}
+.field label,.field>span{font-weight:700;font-size:.95rem}
+.input{font:inherit;padding:12px 14px;border-radius:12px;border:1.5px solid var(--border-strong);background:var(--surface);color:var(--text);outline:none;transition:border .2s,box-shadow .2s;width:100%}
+.input:focus{border-color:var(--primary);box-shadow:0 0 0 4px var(--primary-soft)}
+.input:disabled{background:var(--surface-2);color:var(--muted)}
+.input.mono{font-size:.95rem}
+.err{color:var(--bad);font-size:.92rem;font-weight:700;min-height:1.3em;margin-top:6px}
+
+/* Welcome */
+.hero-grid{display:grid;grid-template-columns:1.25fr .9fr;gap:24px;align-items:center}
+.hero-facts{list-style:none;padding:0;margin:16px 0 0;display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.hero-facts li{background:var(--surface-2);border:1px solid var(--border);border-radius:12px;padding:8px 12px;font-size:.95rem}
+.keyring{position:relative;height:290px}
+.keyring svg.shield{position:absolute;left:50%;top:44%;transform:translate(-50%,-50%);width:150px}
+.ktag{position:absolute;background:var(--surface);border:2px solid var(--accent);border-radius:14px;padding:8px 12px;font-weight:700;box-shadow:var(--shadow);font-size:.95rem;white-space:nowrap}
+.ktag small{display:block;font-weight:400;color:var(--muted);font-size:.78rem}
+.kt1{left:2%;top:4%;transform:rotate(-6deg)}.kt2{right:0;top:12%;transform:rotate(5deg)}.kt3{left:0;bottom:6%;transform:rotate(4deg)}.kt4{right:4%;bottom:0;transform:rotate(-4deg)}
+.who-grid{display:grid;grid-template-columns:1fr 1fr auto;gap:14px;align-items:end}
+
+/* Overview */
+.objectives{margin:0;padding-left:1.3em;display:grid;gap:6px}
+.objectives li::marker{color:var(--primary);font-weight:700}
+.journey{display:grid;gap:12px}
+.jcard{display:grid;grid-template-columns:auto 1fr auto;gap:16px;align-items:center;border:1.5px solid var(--border);border-radius:16px;padding:16px;background:var(--surface)}
+.jcard.locked{opacity:.65}
+.jcard.quiz{border-color:var(--accent);background:var(--surface-2)}
+.jnum{width:46px;height:46px;border-radius:14px;background:var(--primary-soft);color:var(--primary-dark);display:grid;place-items:center;font-family:"Bricolage Grotesque",sans-serif;font-weight:800;font-size:1.3rem;border:1.5px solid var(--accent)}
+.jtitle{font-weight:700;font-size:1.05rem}
+.jmeta{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
+.marks{width:100%;border-collapse:collapse;font-size:.96rem}
+.marks th,.marks td{padding:10px 12px;border-bottom:1px solid var(--border);text-align:left}
+.marks th{background:var(--surface-2);font-weight:700}
+.howto{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px}
+.howto div{background:var(--surface-2);border:1px solid var(--border);border-radius:14px;padding:12px}
+.howto .ic{font-size:1.5rem;display:block}
+
+/* Step */
+.crumbs{display:flex;align-items:center;gap:10px;flex-wrap:wrap;color:var(--muted);font-size:.95rem;margin-bottom:10px}
+.step-title{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap}
+.sec-tag{display:inline-flex;align-items:center;gap:8px;font-family:"Bricolage Grotesque",sans-serif;font-weight:800;font-size:1.05rem;margin-bottom:12px;color:var(--primary-dark)}
+.key{background:var(--primary-soft);border-left:5px solid var(--primary);padding:14px 16px;border-radius:12px;margin-top:14px}
+.analogy{background:var(--surface-2);border:1px dashed var(--border-strong);border-radius:12px;padding:12px 14px}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:12px 0}
+.mini{background:var(--surface-2);border:1px solid var(--border);border-radius:14px;padding:14px}
+.mini-h{font-family:"Bricolage Grotesque",sans-serif;font-weight:800;margin-bottom:4px;color:var(--primary-dark)}
+.activity{border:2px solid var(--accent);background:linear-gradient(180deg,var(--surface-2),var(--surface) 160px)}
+.act-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.done-badge{display:none;align-items:center;gap:6px;background:var(--primary);color:var(--primary-ink);font-weight:700;font-size:.88rem;padding:4px 12px;border-radius:999px}
+.activity.is-done .done-badge{display:inline-flex}
+.task-text{font-weight:700;font-size:1.02rem}
+.hint-area{margin-top:16px;border-top:1px dashed var(--border-strong);padding-top:14px}
+.hint-btn{background:var(--warn-soft);color:var(--warn);border:1px solid var(--warn-border);box-shadow:none}
+.hint-btn:hover{background:var(--warn-soft);border-color:var(--warn)}
+.hintbox{background:var(--warn-soft);border:1px solid var(--warn-border);padding:10px 14px;border-radius:12px;margin-top:10px;animation:pop .25s}
+.feedback{padding:12px 14px;border-radius:12px;margin-top:12px;border-left:5px solid var(--border-strong);background:var(--surface-2);animation:pop .25s}
+.feedback.good{background:var(--good-soft);border-left-color:var(--primary)}
+.feedback.bad{background:var(--bad-soft);border-left-color:var(--bad)}
+.fb-actions{margin-top:10px}
+.stepnav{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.dots{display:flex;gap:6px;align-items:center}
+.dots i{width:10px;height:10px;border-radius:99px;background:var(--border-strong);transition:.3s}
+.dots i.ok{background:var(--accent)}
+.dots i.on{width:28px;background:var(--primary)}
+.part{margin:18px 0 8px;color:var(--primary-dark)}
+.part:first-child{margin-top:0}
+.warnline{background:var(--warn-soft);border:1px solid var(--warn-border);border-radius:10px;padding:8px 12px;font-size:.92rem;margin-bottom:12px}
+
+/* Choice quiz */
+.cq-top{display:flex;align-items:center;gap:12px}
+.cq-bar{flex:1;height:6px;background:var(--border);border-radius:99px;overflow:hidden}
+.cq-bar i{display:block;height:100%;background:var(--primary);transition:width .3s}
+.cq-q{font-size:1.06rem;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px;margin-top:12px}
+.opts{display:flex;flex-wrap:wrap;gap:10px;margin-top:12px}
+.opt{font-size:1rem;font-weight:700;padding:12px 16px;border-radius:12px;border:1.5px solid var(--border-strong);background:var(--surface);color:var(--text);cursor:pointer;transition:background .15s,border-color .15s;text-align:left;line-height:1.35}
+.opt:hover:not(:disabled){border-color:var(--primary);background:var(--primary-soft)}
+.opt:disabled{cursor:default}
+.opt.right{background:var(--good-soft);border-color:var(--primary);color:var(--good)}
+.opt.wrong{background:var(--bad-soft);border-color:var(--bad);color:var(--bad)}
+
+/* Roles / phases */
+.phases{display:flex;gap:8px;flex-wrap:wrap;align-items:stretch;margin:12px 0}
+.phase{flex:1 1 150px;background:var(--surface-2);border:1px solid var(--border);border-radius:14px;padding:12px;text-align:center}
+.phase b{display:block;font-family:"Bricolage Grotesque",sans-serif;font-size:1.05rem}
+.phase-arrow{align-self:center;color:var(--primary);font-weight:700}
+.roles{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin-top:10px}
+.role{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:10px 12px;font-size:.93rem}
+.role b{display:block;color:var(--primary-dark)}
+.order-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.sub{font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:8px}
+.events{display:grid;gap:8px}
+.event{width:100%;font-weight:400}
+.timeline{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:8px}
+.tl-empty{border:1.5px dashed var(--border-strong);border-radius:12px;padding:14px;color:var(--muted);text-align:center}
+.tl-item{display:flex;gap:12px;align-items:flex-start;background:var(--good-soft);border:1px solid var(--accent);border-radius:12px;padding:10px 12px;animation:pop .3s}
+.tl-num{flex:none;width:28px;height:28px;border-radius:50%;background:var(--primary);color:var(--primary-ink);display:grid;place-items:center;font-weight:700}
+.tl-phase{font-size:.82rem;font-weight:700;color:var(--primary-dark)}
+
+/* Flip cards */
+.flips{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px}
+.flip{perspective:900px;height:230px;cursor:pointer;border:0;background:none;padding:0;color:inherit;text-align:left}
+.flip-in{position:relative;width:100%;height:100%;transition:transform .6s;transform-style:preserve-3d}
+.flip.on .flip-in{transform:rotateY(180deg)}
+.face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;border-radius:16px;padding:16px;border:2px solid var(--border-strong);display:flex;flex-direction:column}
+.front{background:var(--surface);align-items:center;justify-content:center;text-align:center;gap:2px}
+.flip:hover .front{border-color:var(--primary)}
+.back{background:var(--primary-soft);border-color:var(--accent);transform:rotateY(180deg);font-size:.93rem;overflow:auto;gap:6px}
+.big-emoji{font-size:46px;line-height:1.1}
+.f-big{font-family:"Bricolage Grotesque",sans-serif;font-weight:800;font-size:1.6rem;color:var(--primary-dark)}
+.f-type{font-weight:700;color:var(--primary-dark)}
+.weak{margin-top:auto;background:var(--surface);border-radius:10px;padding:6px 8px;font-size:.86rem}
+
+/* Sorting */
+.pool{display:flex;flex-wrap:wrap;gap:8px;min-height:56px;padding:12px;border-radius:14px;background:var(--surface);border:1.5px dashed var(--border-strong)}
+.chip{font-size:.95rem;font-weight:700;padding:8px 14px;border-radius:999px;border:1.5px solid var(--border-strong);background:var(--surface-2);color:var(--text);cursor:pointer;transition:transform .15s,background .15s}
+.chip:hover{border-color:var(--primary)}
+.chip.sel{background:var(--primary);color:var(--primary-ink);border-color:var(--primary);transform:translateY(-2px);box-shadow:var(--btn-shadow)}
+.buckets{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-top:14px}
+.bucket{text-align:left;cursor:pointer;border-radius:14px;border:2px solid var(--border-strong);background:var(--surface);padding:12px;min-height:140px;color:var(--text);display:flex;flex-direction:column;gap:6px;transition:border-color .15s,background .15s}
+.bucket:hover{border-color:var(--primary);background:var(--surface-2)}
+.bh{font-family:"Bricolage Grotesque",sans-serif;font-weight:800;font-size:1.05rem}
+.placedlist{display:flex;flex-wrap:wrap;gap:5px}
+.placed{font-size:.82rem;background:var(--good-soft);border:1px solid var(--accent);border-radius:8px;padding:2px 8px;color:var(--good);font-weight:700}
+
+/* Hash and salt */
+.hashout{font-family:"JetBrains Mono",monospace;font-size:.84rem;word-break:break-all;background:var(--code-bg);border:1px solid var(--border);border-radius:10px;padding:10px 12px;min-height:46px;margin-top:8px}
+.flow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:10px 0}
+.flow .box{background:var(--surface);border:1.5px solid var(--border-strong);border-radius:10px;padding:6px 10px;font-weight:700}
+.flow .box.fn{background:var(--primary);color:var(--primary-ink);border-color:var(--primary)}
+.tablewrap{overflow-x:auto;border:1px solid var(--border);border-radius:12px;background:var(--surface)}
+table.file{width:100%;border-collapse:collapse;font-size:.9rem}
+table.file th,table.file td{padding:9px 12px;border-bottom:1px solid var(--border);text-align:left;white-space:nowrap}
+table.file tr:last-child td{border-bottom:0}
+table.file th{background:var(--surface-2);font-weight:700}
+td.dup{background:var(--bad-soft);color:var(--bad);font-weight:700}
+td.uniq{background:var(--good-soft);color:var(--good)}
+.login-row{display:grid;grid-template-columns:.7fr 1.3fr auto;gap:8px;margin-top:12px}
+.seg{display:inline-flex;background:var(--surface-2);border:1px solid var(--border);border-radius:12px;padding:4px;gap:4px}
+.seg button{font-size:.95rem;font-weight:700;border:0;background:transparent;color:var(--muted);padding:8px 14px;border-radius:9px;cursor:pointer}
+.seg button.on{background:var(--surface);color:var(--primary-dark);box-shadow:var(--shadow)}
+
+/* Tasks / meter / stats */
+.tasks{display:flex;flex-direction:column;gap:6px;margin-top:12px}
+.task{display:flex;gap:10px;align-items:center;font-weight:700;color:var(--muted)}
+.tick{width:24px;height:24px;border-radius:50%;border:2px solid var(--border-strong);display:grid;place-items:center;font-size:.8rem;flex:none;color:transparent;transition:.25s}
+.task.ok{color:var(--good)}
+.task.ok .tick{background:var(--primary);border-color:var(--primary);color:var(--primary-ink)}
+.meter{height:14px;border-radius:99px;background:var(--surface-2);border:1px solid var(--border);overflow:hidden;margin-top:12px}
+.meter i{display:block;height:100%;width:0;transition:width .3s,background .3s}
+.verdict{font-family:"Bricolage Grotesque",sans-serif;font-weight:800;font-size:1.15rem;margin-top:8px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-top:10px}
+.stat{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:10px 12px}
+.stat .k{font-size:.84rem;color:var(--muted);font-weight:700}
+.stat .v{font-weight:700;font-size:1.08rem}
+.reveals{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+.reveal{text-align:left;cursor:pointer;border-radius:14px;border:1.5px dashed var(--border-strong);background:var(--surface);padding:14px;color:var(--text);min-height:92px;font-size:.96rem}
+.reveal:hover{border-color:var(--primary)}
+.reveal.on{border-style:solid;border-color:var(--accent);background:var(--good-soft);cursor:default}
+
+/* OTP */
+.otp-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:16px}
+.token{background:var(--token-bg);border-radius:24px;padding:22px;color:#eafff2;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;box-shadow:inset 0 -6px 0 rgba(0,0,0,.18),var(--shadow)}
+.token-brand{font-weight:700;letter-spacing:.02em}
+.token-screen{background:var(--token-screen);color:#0d3b27;font-family:"JetBrains Mono",monospace;font-size:2.1rem;font-weight:600;letter-spacing:.12em;padding:12px 18px;border-radius:12px;width:100%;text-align:center}
+.token-bar{width:100%;height:8px;background:rgba(255,255,255,.2);border-radius:99px;overflow:hidden}
+.token-bar i{display:block;height:100%;background:#9cf0bf;transition:width 1s linear}
+.token-t{font-size:.9rem;color:#cdeedb}
+.portal{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:16px;display:flex;flex-direction:column;gap:10px}
+.portal-h{font-family:"Bricolage Grotesque",sans-serif;font-weight:800}
+
+/* Threshold chart */
+.chartbox{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:8px;overflow-x:auto}
+.chartbox svg{display:block;width:100%;min-width:480px;height:auto}
+.c-imp{fill:none;stroke:var(--rose);stroke-width:3}
+.c-gen{fill:none;stroke:var(--primary);stroke-width:3}
+.s-imp{fill:var(--rose);fill-opacity:.28}
+.s-gen{fill:var(--amber);fill-opacity:.35}
+.axis{stroke:var(--border-strong);stroke-width:2}
+.thr{stroke:var(--text);stroke-width:2;stroke-dasharray:6 4}
+.lbl{fill:var(--muted);font-size:13px;font-family:"Atkinson Hyperlegible",sans-serif}
+.lbl.strong{fill:var(--text);font-weight:700}
+input[type=range]{width:100%;accent-color:var(--primary);height:28px}
+.rate.fm{border-left:5px solid var(--rose)}
+.rate.fnm{border-left:5px solid var(--amber)}
+
+/* Challenge-response */
+.seq-head{display:grid;grid-template-columns:1fr 1fr;gap:10px;font-weight:700;text-align:center;margin:12px 0 8px}
+.seq-head div{background:var(--surface-2);border:1px solid var(--border);border-radius:12px;padding:8px}
+.seq{display:flex;flex-direction:column;gap:8px}
+.msg{display:flex;flex-direction:column;gap:3px;padding:10px 14px;border-radius:12px;background:var(--surface);border:1.5px solid var(--border);animation:slide .35s}
+.msg .dir{font-size:.86rem;font-weight:700;color:var(--muted)}
+.msg .pay{font-family:"JetBrains Mono",monospace;font-size:.84rem;word-break:break-all}
+.msg .note{font-size:.92rem}
+.msg.to-server{margin-right:16%}
+.msg.to-client{margin-left:16%}
+.msg.calc{margin:0 8%;background:var(--surface-2);border-style:dashed}
+.msg.ok{background:var(--good-soft);border-color:var(--primary)}
+.msg.bad{background:var(--bad-soft);border-color:var(--bad)}
+.msg.eve{border-color:var(--rose)}
+.store{background:var(--surface-2);border:1px solid var(--border);border-radius:12px;padding:10px 12px}
+.threats{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px}
+.threats div{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:10px 12px;font-size:.92rem}
+.threats b{display:block;color:var(--primary-dark)}
+
+/* Module done */
+.done-card{text-align:center}
+.medal{font-size:64px;line-height:1}
+.takeaways{text-align:left;background:var(--surface-2);border:1px solid var(--border);border-radius:16px;padding:16px 20px;margin:18px auto;max-width:620px}
+.takeaways ul{margin:0;padding-left:1.2em;display:grid;gap:6px}
+
+/* Quiz */
+.qprompt{font-size:1.25rem;margin:14px 0}
+.qopts{display:flex;flex-direction:column;gap:10px}
+.qopt{display:flex;gap:12px;align-items:center;text-align:left;font-size:1rem;padding:12px 14px;border-radius:14px;border:1.5px solid var(--border-strong);background:var(--surface);color:var(--text);cursor:pointer;transition:background .15s,border-color .15s}
+.qopt:hover:not(:disabled){border-color:var(--primary);background:var(--surface-2)}
+.qopt:disabled{cursor:default}
+.letter{width:32px;height:32px;border-radius:10px;background:var(--surface-2);display:grid;place-items:center;font-weight:700;flex:none;border:1px solid var(--border)}
+.qopt.sel{border-color:var(--primary);background:var(--primary-soft)}
+.qopt.sel .letter{background:var(--primary);color:var(--primary-ink);border-color:var(--primary)}
+.qopt.right{border-color:var(--primary);background:var(--good-soft)}
+.qopt.right .letter{background:var(--primary);color:var(--primary-ink)}
+.qopt.wrong{border-color:var(--bad);background:var(--bad-soft)}
+.qopt.wrong .letter{background:var(--bad);color:#fff}
+
+/* Result */
+.cert{border:2px solid var(--accent)}
+.result-grid{display:grid;grid-template-columns:auto 1fr;gap:24px;align-items:center;margin-top:12px}
+.ring{width:170px;height:170px;border-radius:50%;background:conic-gradient(var(--primary) calc(var(--p) * 1%),var(--surface-2) 0);display:grid;place-items:center;border:1px solid var(--border)}
+.ring>div{width:132px;height:132px;border-radius:50%;background:var(--surface);display:grid;place-items:center;text-align:center;line-height:1}
+.ring b{font-family:"Bricolage Grotesque",sans-serif;font-size:2.8rem;font-weight:800;color:var(--primary-dark)}
+.ring span{display:block;color:var(--muted);font-size:1rem;margin-top:4px}
+.kv{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px}
+.kv div{background:var(--surface-2);border:1px solid var(--border);border-radius:12px;padding:8px 12px}
+.kv small{display:block;color:var(--muted);font-size:.84rem}
+.kv b{font-size:1.02rem;word-break:break-word}
+.status-pass{color:var(--good)}.status-fail{color:var(--bad)}
+.review{margin:0;padding-left:1.3em;display:grid;gap:12px}
+.review li{background:var(--surface-2);border:1px solid var(--border);border-radius:12px;padding:12px 14px}
+.review .yes{color:var(--good);font-weight:700}.review .no{color:var(--bad);font-weight:700}
+textarea.copybox{width:100%;min-height:150px;font-family:"JetBrains Mono",monospace;font-size:.85rem;border-radius:12px;border:1.5px solid var(--border-strong);padding:10px;background:var(--surface);color:var(--text);margin-top:10px}
+.foot{text-align:center;color:var(--muted);font-size:.86rem;padding:0 20px 30px}
+
+/* Motion */
+@keyframes pop{from{transform:scale(.98);opacity:0}to{transform:none;opacity:1}}
+@keyframes slide{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-6px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}}
+.shake{animation:shake .4s}
+.screen{animation:slide .35s ease}
+.confetti{position:fixed;inset:0;pointer-events:none;z-index:50;overflow:hidden}
+.confetti i{position:absolute;top:-14px;width:9px;height:14px;border-radius:2px;animation:fall linear forwards}
+@keyframes fall{to{transform:translateY(106vh) rotate(720deg)}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}.flip-in{transition:none!important}}
+
+/* Responsive */
+@media (max-width:760px){
+  .hero-grid,.who-grid,.order-grid,.two-col,.result-grid{grid-template-columns:1fr}
+  .keyring{height:230px}
+  .hero-facts{grid-template-columns:1fr}
+  .jcard{grid-template-columns:auto 1fr}
+  .jcard .btn{grid-column:1/-1}
+  .login-row{grid-template-columns:1fr}
+  .msg.to-server{margin-right:6%}.msg.to-client{margin-left:6%}.msg.calc{margin:0 3%}
+  .ring{margin:0 auto}
+  .tb-prog{display:none}
+}
+</style>
+</head>
+<body>
+<header class="topbar" id="topbar"></header>
+<main id="app" class="wrap"></main>
+<footer class="foot">Progress is saved in this browser only. On a shared lab computer, choose “I’m a different student” before starting.</footer>
+
+<script>
+(function(){
+"use strict";
+
+/* ---------- Basics ---------- */
+const KEY = "ua-activity-lab-v1";
+const TOTAL = 15;
+const app = document.getElementById("app");
+const topbar = document.getElementById("topbar");
+const reduceMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+function fresh(){ return { name:"", roll:"", maxPos:-1, done:{}, results:[] }; }
+let S = fresh();
+function save(){ try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){} }
+function load(){ try{ const v = localStorage.getItem(KEY); if(v){ const o = JSON.parse(v); if(o && typeof o === "object") S = Object.assign(fresh(), o); } }catch(e){} }
+
+function esc(s){ return String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+function shuffle(a){ a = a.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+function shake(el){ el.classList.remove("shake"); void el.offsetWidth; el.classList.add("shake"); }
+function el(html){ const t=document.createElement("template"); t.innerHTML=html.trim(); return t.content.firstElementChild; }
+function doneCount(){ return Object.keys(S.done).filter(k => S.done[k]).length; }
+function rhex(n){ const b=new Uint8Array(Math.ceil(n/2)); try{ crypto.getRandomValues(b); }catch(e){ for(let i=0;i<b.length;i++) b[i]=Math.floor(Math.random()*256); } return Array.from(b).map(x=>x.toString(16).padStart(2,"0")).join("").slice(0,n); }
+let cleanups = [];
+function cleanup(){ cleanups.forEach(f => { try{ f(); }catch(e){} }); cleanups = []; }
+let mode = "welcome";
+
+async function sha256(str){
+  try{
+    if(window.crypto && crypto.subtle){
+      const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(str));
+      return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,"0")).join("");
+    }
+  }catch(e){}
+  let out = "";
+  for(let k=0;k<8;k++){ let h = (0x811c9dc5 ^ (k*2654435761))>>>0; for(const ch of (str+"#"+k)){ h ^= ch.charCodeAt(0); h = Math.imul(h,16777619)>>>0; } out += h.toString(16).padStart(8,"0"); }
+  return out;
+}
+
+function confetti(){
+  if(reduceMotion) return;
+  const cols = ["#2e8b57","#93d3ac","#f2c46a","#7fd6c2","#d2556a"];
+  const box = document.createElement("div"); box.className = "confetti";
+  for(let i=0;i<70;i++){
+    const p = document.createElement("i");
+    p.style.left = (Math.random()*100) + "vw";
+    p.style.background = cols[i % cols.length];
+    p.style.animationDelay = (Math.random()*0.7) + "s";
+    p.style.animationDuration = (2 + Math.random()*1.6) + "s";
+    box.appendChild(p);
+  }
+  document.body.appendChild(box);
+  setTimeout(() => box.remove(), 4500);
+}
+
+/* ---------- Generic choice activity ---------- */
+function choiceQuiz(root, cfg){
+  const items = cfg.items; let i = 0, first = 0, missed = false;
+  const wrap = document.createElement("div"); root.appendChild(wrap);
+  function show(){
+    if(i >= items.length){
+      wrap.innerHTML = `<div class="feedback good">🎉 All ${items.length} done! Correct on the first try: <b>${first} of ${items.length}</b></div>`;
+      if(cfg.onDone) cfg.onDone();
+      return;
+    }
+    const it = items[i]; missed = false;
+    let opts = (it.opts || cfg.options).slice(); if(cfg.shuffle) opts = shuffle(opts);
+    wrap.innerHTML = `<div class="cq-top"><span class="pill">${i+1} of ${items.length}</span><span class="cq-bar"><i style="width:${i/items.length*100}%"></i></span></div>
+      <div class="cq-q">${it.q}</div>
+      <div class="opts">${opts.map((o,k)=>`<button class="opt" data-k="${k}">${o}</button>`).join("")}</div>
+      <div class="cq-fb" aria-live="polite"></div>`;
+    const fb = wrap.querySelector(".cq-fb");
+    wrap.querySelectorAll(".opt").forEach(b => b.addEventListener("click", () => {
+      const o = opts[+b.dataset.k];
+      if(o === it.a){
+        if(!missed) first++;
+        wrap.querySelectorAll(".opt").forEach(x => x.disabled = true);
+        b.classList.add("right");
+        fb.innerHTML = `<div class="feedback good"><b>Correct!</b> ${it.why}<div class="fb-actions"><button class="btn btn-sm">${i+1 < items.length ? "Next one" : "Finish"}</button></div></div>`;
+        fb.querySelector("button").addEventListener("click", () => { i++; show(); });
+      } else {
+        missed = true; b.classList.add("wrong"); b.disabled = true; shake(b);
+        fb.innerHTML = `<div class="feedback bad"><b>Not quite.</b> ${it.hint || cfg.hint || "Read it again and try another option."}</div>`;
+      }
+    }));
+  }
+  show();
+}
+
+/* ---------- Content data ---------- */
+const FACTORS = [
+  {id:"know", e:"🧠", k:"Know", short:"lives in your head", ex:"password, PIN, answer to a secret question", type:"Knowledge factor", weak:"Can be guessed, stolen, shared or forgotten.", tip:"This is something you remember in your head."},
+  {id:"have", e:"💳", k:"Have", short:"sits in your pocket", ex:"smart card, ATM card, physical key, phone that receives an OTP", type:"Called a token", weak:"Can be lost, stolen or copied, and costs money.", tip:"This is a physical object you carry."},
+  {id:"are",  e:"👁️", k:"Are",  short:"is part of your body", ex:"fingerprint, face, retina, iris", type:"Static biometrics (your body)", weak:"Readings have errors, and you can’t change your fingerprint if it leaks.", tip:"This is part of your body that stays the same."},
+  {id:"do",   e:"✍️", k:"Do",   short:"is how you behave", ex:"voice pattern, handwriting and signature, typing rhythm", type:"Dynamic biometrics (your behaviour)", weak:"Changes with mood, health or a sore throat.", tip:"This is something you perform: a behaviour."}
+];
+const FK = {know:"Know", have:"Have", are:"Are", do:"Do"};
+
+const SORT_ITEMS = [
+  {t:"PIN code", f:"know"}, {t:"Answer to “Name of your first school?”", f:"know"}, {t:"Password", f:"know"},
+  {t:"ATM card", f:"have"}, {t:"Phone receiving an OTP", f:"have"}, {t:"University smart ID card", f:"have"},
+  {t:"Fingerprint", f:"are"}, {t:"Face", f:"are"}, {t:"Iris pattern", f:"are"},
+  {t:"Voice pattern", f:"do"}, {t:"Handwritten signature", f:"do"}, {t:"Typing rhythm", f:"do"}
+];
+
+const NIST_EVENTS = [
+  {t:"An <b>Applicant</b> asks for an account, like a new student at admission.", phase:"Registration", clue:"the story starts with someone <b>asking</b> for an account."},
+  {t:"The <b>Registration Authority</b> checks their identity documents (CNIC, admission letter).", phase:"Registration", clue:"before anything is issued, someone must <b>check identity documents</b>."},
+  {t:"The <b>Credential Service Provider</b> issues a credential: a username with a password, or a smart card.", phase:"Credential", clue:"identity is checked, so who <b>issues</b> the credential?"},
+  {t:"The person is now a <b>Subscriber</b>: their identity is bound to that credential.", phase:"Credential", clue:"after receiving a credential, what is the person called?"},
+  {t:"Later, as a <b>Claimant</b>, they log in and prove their identity to a <b>Verifier</b>.", phase:"Authentication", clue:"time passes and now the person wants to <b>log in</b>."},
+  {t:"The Verifier tells the <b>Relying Party</b> (the portal) the user is genuine, so access is granted.", phase:"Authentication", clue:"who finally <b>grants access</b> based on the verifier’s answer?"}
+];
+
+const ATTACK = {
+  off:"Offline dictionary attack", spec:"Specific account attack", pop:"Popular password attack", single:"Guessing against a single user",
+  hij:"Workstation hijacking", mist:"Exploiting user mistakes", multi:"Exploiting multiple password use", mon:"Electronic monitoring"
+};
+
+const COMMON = ["123456","password","12345678","qwerty","123456789","12345","111111","1234567","iloveyou","admin","welcome","abc123","password1","password123","pakistan","pakistan123","letmein","000000","qwerty123","1q2w3e4r","123123","654321"];
+const WORDS = ["password","pakistan","football","iloveyou","hyderabad","karachi","welcome","cricket","student","monkey","dragon","qwerty","mehran","admin","sindh","love"].sort((a,b)=>b.length-a.length);
+
+/* ---------- Activities ---------- */
+function act_idVerify(root, api){
+  const I = "Identification", V = "Verification";
+  choiceQuiz(root, {
+    options:[I, V],
+    hint:"Ask yourself: is this just a <b>claim</b> anyone could make, or real <b>evidence</b>?",
+    items:[
+      {q:"You type <b>sana.khan@uni.edu.pk</b> into the email box on the login page.", a:I, why:"Typing an email only <i>claims</i> an identity. Anyone could type it."},
+      {q:"You type the password for that account.", a:V, why:"The password is evidence that backs up your claim."},
+      {q:"You tell the lab attendant, “I am roll number 23CS045.”", a:I, why:"Saying a roll number is a claim. Nothing has been proven yet."},
+      {q:"You enter the 6-digit code that was just sent to your phone.", a:V, why:"Only the person holding your phone should be able to see that code."},
+      {q:"Your phone unlocks after scanning your face.", a:V, why:"Your face is compared with the stored template of the phone’s owner. That is proof."},
+      {q:"You pick your name from a drop-down list on the attendance portal.", a:I, why:"Choosing a name is still just a claim."}
+    ],
+    onDone: api.complete
+  });
+}
+
+function act_nistOrder(root, api){
+  let next = 0;
+  const order = shuffle(NIST_EVENTS.map((e,i)=>i));
+  root.innerHTML = `<div class="order-grid">
+    <div><div class="sub">Events (shuffled)</div><div class="events" id="evs"></div></div>
+    <div><div class="sub">Your timeline</div><ol class="timeline" id="tl"><li class="tl-empty">Click the event that happens first</li></ol></div>
+  </div><div id="ofb" aria-live="polite"></div>`;
+  const evs = root.querySelector("#evs"), tl = root.querySelector("#tl"), fb = root.querySelector("#ofb");
+  order.forEach(i => {
+    const b = el(`<button class="opt event">${NIST_EVENTS[i].t}</button>`);
+    b.addEventListener("click", () => {
+      if(i === next){
+        b.remove();
+        if(next === 0) tl.innerHTML = "";
+        tl.appendChild(el(`<li class="tl-item"><span class="tl-num">${next+1}</span><div><div class="tl-phase">${NIST_EVENTS[i].phase} phase</div>${NIST_EVENTS[i].t}</div></li>`));
+        next++;
+        if(next === NIST_EVENTS.length){
+          fb.innerHTML = `<div class="feedback good">🎉 Perfect order! Registration, then credential, then authentication. Notice the same person was called Applicant, Subscriber and Claimant along the way.</div>`;
+          api.complete();
+        } else {
+          fb.innerHTML = `<div class="feedback good">✓ Correct. What happens next?</div>`;
+        }
+      } else {
+        shake(b);
+        fb.innerHTML = `<div class="feedback bad">Not yet. Hint: ${NIST_EVENTS[next].clue}</div>`;
+      }
+    });
+    evs.appendChild(b);
+  });
+}
+
+function act_flip(root, api){
+  const seen = new Set();
+  root.innerHTML = `<div class="flips">${FACTORS.map((f,i)=>`
+    <button class="flip" data-i="${i}" aria-label="Flip the card: something you ${f.k.toLowerCase()}">
+      <div class="flip-in">
+        <div class="face front"><div class="big-emoji">${f.e}</div><div class="muted">Something you</div><div class="f-big">${f.k}</div><div class="small muted">Tap to flip</div></div>
+        <div class="face back"><span class="f-type">${f.e} ${f.type}</span><span><b>Examples:</b> ${f.ex}</span><div class="weak">⚠️ ${f.weak}</div></div>
+      </div>
+    </button>`).join("")}</div><div id="ffb" aria-live="polite"></div>`;
+  const fb = root.querySelector("#ffb");
+  root.querySelectorAll(".flip").forEach(b => b.addEventListener("click", () => {
+    b.classList.toggle("on"); seen.add(b.dataset.i);
+    if(seen.size === 4){
+      fb.innerHTML = `<div class="feedback good">🎉 You’ve met all four factors: <b>Know, Have, Are, Do</b>. Are and Do are both biometrics: Are is your body, Do is your behaviour.</div>`;
+      api.complete();
+    } else {
+      fb.innerHTML = `<div class="feedback">${seen.size} of 4 cards flipped.</div>`;
+    }
+  }));
+}
+
+function act_sort(root, api){
+  const items = shuffle(SORT_ITEMS); let sel = null, placed = 0, first = 0; const missed = new Set();
+  root.innerHTML = `<div class="sub">Items to sort <span class="pill" id="left">${items.length} left</span></div>
+    <div class="pool" id="pool"></div>
+    <div class="buckets">${FACTORS.map(f=>`<button class="bucket" data-f="${f.id}"><span class="bh">${f.e} Something you ${f.k.toLowerCase()}</span><span class="small muted">It ${f.short}</span><div class="placedlist"></div></button>`).join("")}</div>
+    <div id="sfb" aria-live="polite"></div>`;
+  const pool = root.querySelector("#pool"), fb = root.querySelector("#sfb"), left = root.querySelector("#left");
+  items.forEach(it => {
+    const c = el(`<button class="chip">${it.t}</button>`); c._it = it;
+    c.addEventListener("click", () => {
+      pool.querySelectorAll(".chip").forEach(x => x.classList.remove("sel"));
+      c.classList.add("sel"); sel = c;
+      fb.innerHTML = `<div class="feedback">Selected <b>${it.t}</b>. Now tap the factor box it belongs to.</div>`;
+    });
+    pool.appendChild(c);
+  });
+  root.querySelectorAll(".bucket").forEach(b => b.addEventListener("click", () => {
+    if(!sel){ shake(b); fb.innerHTML = `<div class="feedback">First tap an item in the dashed box, then tap a factor.</div>`; return; }
+    const it = sel._it;
+    if(it.f === b.dataset.f){
+      if(!missed.has(it.t)) first++;
+      b.querySelector(".placedlist").appendChild(el(`<span class="placed">${it.t}</span>`));
+      sel.remove(); sel = null; placed++;
+      left.textContent = (items.length - placed) + " left";
+      if(placed === items.length){
+        pool.innerHTML = `<span class="muted">All sorted!</span>`;
+        fb.innerHTML = `<div class="feedback good">🎉 All 12 sorted! Correct on the first try: <b>${first} of 12</b>.</div>`;
+        api.complete();
+      } else {
+        fb.innerHTML = `<div class="feedback good">✓ <b>${it.t}</b> is something you <b>${FK[it.f].toLowerCase()}</b>.</div>`;
+      }
+    } else {
+      missed.add(it.t); shake(b);
+      fb.innerHTML = `<div class="feedback bad">Not “${FK[b.dataset.f]}”. Hint: ${FACTORS.find(f=>f.id===it.f).tip}</div>`;
+    }
+  }));
+}
+
+function act_mfa(root, api){
+  const Y = "True MFA ✅", N = "Not MFA ❌";
+  choiceQuiz(root, {
+    options:[Y, N],
+    hint:"Label each part with its factor (Know, Have, Are, Do). Are the two labels <b>different</b>?",
+    items:[
+      {q:"Password + PIN", a:N, why:"Both are things you <b>know</b>: one factor type used twice."},
+      {q:"ATM card + PIN", a:Y, why:"Card = <b>have</b>, PIN = <b>know</b>. Two different types, which is why a stolen ATM card alone is not enough."},
+      {q:"Password + OTP sent to your phone", a:Y, why:"Password = <b>know</b>, phone = <b>have</b>."},
+      {q:"Fingerprint + face scan", a:N, why:"Both are <b>are</b> (static biometrics). Stronger, but still one factor type."},
+      {q:"Password + answer to a secret question", a:N, why:"Both are things you <b>know</b>. Many websites call this “extra security”, but it isn’t MFA."},
+      {q:"University smart ID card + fingerprint", a:Y, why:"Card = <b>have</b>, fingerprint = <b>are</b>."}
+    ],
+    onDone: api.complete
+  });
+}
+
+async function act_hash(root, api){
+  root.innerHTML = `<p class="muted">Preparing the password file…</p>`;
+  const sanaHash = await sha256("mango123"), bilalHash = await sha256("cricket7");
+  let partA = false, partB = false, tick = 0; const seen = new Set();
+  root.innerHTML = `<div class="warnline">⚠️ Practice only. Never type a real password into any training tool.</div>
+    <h4 class="part">Part A: watch the hash change</h4>
+    <div class="field"><label for="hin">Type a practice password</label><input class="input mono" id="hin" placeholder="for example hello123" autocomplete="off" spellcheck="false" autocapitalize="off"></div>
+    <div class="hashout" id="hout">The SHA-256 hash will appear here.</div>
+    <div class="tasks"><div class="task" id="tA"><span class="tick">✓</span>Change your text three times and notice the whole hash changes</div></div>
+    <h4 class="part">Part B: log in the way the system does</h4>
+    <p class="small">This is the stored password file. Notice there are no passwords in it, only hashes.</p>
+    <div class="tablewrap"><table class="file"><thead><tr><th>Username</th><th>Stored hash (SHA-256)</th></tr></thead><tbody>
+      <tr><td>sana</td><td class="mono">${sanaHash.slice(0,32)}…</td></tr>
+      <tr><td>bilal</td><td class="mono">${bilalHash.slice(0,32)}…</td></tr></tbody></table></div>
+    <div class="login-row"><input class="input" value="sana" disabled aria-label="Username"><input class="input mono" id="lp" placeholder="Password for sana" autocomplete="off" spellcheck="false" autocapitalize="off"><button class="btn" id="lgo">Log in</button></div>
+    <div class="tasks"><div class="task" id="tB"><span class="tick">✓</span>Log in as sana</div></div>
+    <div id="lfb" aria-live="polite"></div>`;
+  const hin = root.querySelector("#hin"), hout = root.querySelector("#hout"), lp = root.querySelector("#lp"), lfb = root.querySelector("#lfb");
+  function check(){ if(partA && partB) api.complete(); }
+  hin.addEventListener("input", async () => {
+    const v = hin.value; const my = ++tick;
+    if(!v){ hout.textContent = "The SHA-256 hash will appear here."; return; }
+    const h = await sha256(v); if(my !== tick) return;
+    hout.textContent = h; seen.add(v);
+    if(seen.size >= 4 && !partA){ partA = true; root.querySelector("#tA").classList.add("ok"); check(); }
+  });
+  async function login(){
+    const v = lp.value; if(!v){ lfb.innerHTML = `<div class="feedback">Type a password guess first.</div>`; return; }
+    const h = await sha256(v);
+    const steps = `You typed <code>${esc(v)}</code> → the system hashed it to <code>${h.slice(0,16)}…</code> → compared it with the stored <code>${sanaHash.slice(0,16)}…</code>`;
+    if(h === sanaHash){
+      partB = true; root.querySelector("#tB").classList.add("ok");
+      lfb.innerHTML = `<div class="feedback good">${steps}<br><b>✅ The hashes match, so access is granted.</b> The system never needed to store “mango123”, only its hash.</div>`;
+      check();
+    } else {
+      lfb.innerHTML = `<div class="feedback bad">${steps}<br><b>❌ No match, so access is denied.</b> Use the hint button if you’re stuck.</div>`;
+    }
+  }
+  root.querySelector("#lgo").addEventListener("click", login);
+  lp.addEventListener("keydown", e => { if(e.key === "Enter") login(); });
+}
+
+async function act_salt(root, api){
+  root.innerHTML = `<p class="muted">Preparing the password file…</p>`;
+  const pw = "pakistan1"; const plain = await sha256(pw);
+  let salted = false, salts = [], hashes = [];
+  async function newSalts(){ salts = [rhex(8), rhex(8)]; hashes = [await sha256(salts[0]+pw), await sha256(salts[1]+pw)]; }
+  await newSalts();
+  root.innerHTML = `<div class="row wrap"><div class="seg" role="group" aria-label="Salt setting"><button data-v="0" class="on">Without salt</button><button data-v="1">With salt</button></div>
+    <button class="btn btn-soft btn-sm" id="ns" hidden>🎲 New random salts</button></div>
+    <div class="tablewrap" style="margin-top:12px"><table class="file"><thead id="th"></thead><tbody id="tb"></tbody></table></div>
+    <p class="small" id="cap" style="margin-top:8px"></p>
+    <h4 class="part">Question</h4><div id="mcq"></div>`;
+  const th = root.querySelector("#th"), tb = root.querySelector("#tb"), cap = root.querySelector("#cap"), ns = root.querySelector("#ns");
+  function render(){
+    if(!salted){
+      th.innerHTML = `<tr><th>User</th><th>Password chosen</th><th>Stored hash = h(password)</th></tr>`;
+      tb.innerHTML = ["Ali","Sara"].map(u=>`<tr><td>${u}</td><td class="muted">pakistan1 (not stored)</td><td class="mono dup">${plain.slice(0,28)}…</td></tr>`).join("");
+      cap.innerHTML = "⚠️ Identical hashes! Anyone who steals this file can see that Ali and Sara share a password.";
+    } else {
+      th.innerHTML = `<tr><th>User</th><th>Salt (stored openly)</th><th>Stored hash = h(salt + password)</th></tr>`;
+      tb.innerHTML = ["Ali","Sara"].map((u,i)=>`<tr><td>${u}</td><td class="mono">${salts[i]}</td><td class="mono uniq">${hashes[i].slice(0,28)}…</td></tr>`).join("");
+      cap.innerHTML = "✅ Same password, completely different hashes. The duplicate is hidden.";
+    }
+    ns.hidden = !salted;
+  }
+  root.querySelectorAll(".seg button").forEach(b => b.addEventListener("click", () => {
+    root.querySelectorAll(".seg button").forEach(x => x.classList.remove("on")); b.classList.add("on");
+    salted = b.dataset.v === "1"; render();
+  }));
+  ns.addEventListener("click", async () => { await newSalts(); render(); });
+  render();
+  choiceQuiz(root.querySelector("#mcq"), {
+    items:[{
+      q:"Look at the file <b>without salt</b>. What can an attacker who steals it notice straight away?",
+      opts:["Ali and Sara use the same password","Ali’s actual password, in plain text","Nothing at all, because hashes hide everything"],
+      a:"Ali and Sara use the same password",
+      why:"Identical hashes give it away: crack one and you’ve cracked both. Salt removes that clue.",
+      hint:"Hashes can’t be reversed directly, but look closely: are any two rows identical?"
+    }],
+    shuffle:true,
+    onDone: api.complete
+  });
+}
+
+function act_attacks(root, api){
+  const A = ATTACK;
+  choiceQuiz(root, {
+    shuffle:true,
+    hint:"Is the attacker online (trying the login page) or offline (holding a stolen file)? One account or many?",
+    items:[
+      {q:"A hacker steals the file of password hashes and, on their own laptop, runs millions of dictionary words through the hash function.", a:A.off, opts:[A.off,A.pop,A.mon,A.hij],
+       why:"🛡️ <b>Defence:</b> protect the password file, use salt, detect intrusions, and force password changes quickly after a breach."},
+      {q:"An attacker keeps trying password after password on the Head of Department’s account only.", a:A.spec, opts:[A.spec,A.pop,A.off,A.mist],
+       why:"🛡️ <b>Defence:</b> lock the account after a few failed attempts."},
+      {q:"An attacker tries the password <code>123456</code> on thousands of different usernames.", a:A.pop, opts:[A.pop,A.spec,A.multi,A.hij],
+       why:"🛡️ <b>Defence:</b> block common passwords when users choose them, and watch for many logins from the same IP address."},
+      {q:"Someone checks your Instagram for your birthday, your cat’s name and your favourite team, then tries them as your password.", a:A.single, opts:[A.single,A.off,A.mon,A.pop],
+       why:"🛡️ <b>Defence:</b> training and password policies. Never use personal facts as passwords."},
+      {q:"A student leaves the lab PC logged in and goes for tea. A classmate sits down and uses the account.", a:A.hij, opts:[A.hij,A.mist,A.spec,A.mon],
+       why:"🛡️ <b>Defence:</b> automatic screen lock or logout after inactivity. Get into the habit of pressing Windows + L."},
+      {q:"A password is found on a sticky note under the office keyboard.", a:A.mist, opts:[A.mist,A.hij,A.single,A.off],
+       why:"🛡️ <b>Defence:</b> user training, and a second factor so that a leaked password alone isn’t enough."},
+      {q:"Your password leaks from a gaming website. The attacker tries it on your university email, and it works.", a:A.multi, opts:[A.multi,A.pop,A.off,A.mon],
+       why:"🛡️ <b>Defence:</b> a different password for every site. A password manager makes that easy."},
+      {q:"On public café Wi‑Fi, an attacker captures your password as it travels across the network.", a:A.mon, opts:[A.mon,A.hij,A.off,A.single],
+       why:"🛡️ <b>Defence:</b> encryption (HTTPS). Even an encrypted password can be <i>replayed</i>, which is why challenge–response exists. You’ll try it in Lesson 3."}
+    ],
+    onDone: api.complete
+  });
+}
+
+function analysePw(pw){
+  const low = pw.toLowerCase();
+  const pool = (/[a-z]/.test(pw)?26:0) + (/[A-Z]/.test(pw)?26:0) + (/\d/.test(pw)?10:0) + (/[^A-Za-z0-9]/.test(pw)?33:0);
+  if(COMMON.includes(low)) return {common:true, word:null, pool, bits:0};
+  const word = WORDS.find(w => low.includes(w)) || null;
+  const effLen = Math.max(0, pw.length - (word ? word.length : 0));
+  const bits = effLen * Math.log2(pool || 1) + (word ? Math.log2(10000) : 0);
+  return {common:false, word, pool, bits};
+}
+function fmtTime(l){
+  if(l < 0) return "less than a second";
+  const s = Math.pow(10, l);
+  if(s < 60) return Math.round(s) + " seconds";
+  if(s < 3600) return Math.round(s/60) + " minutes";
+  if(s < 86400) return Math.round(s/3600) + " hours";
+  if(s < 31557600) return Math.round(s/86400) + " days";
+  const y = l - Math.log10(31557600);
+  if(y < 3) return Math.round(Math.pow(10,y)) + " years";
+  if(y < 6) return Math.round(Math.pow(10,y-3)) + " thousand years";
+  if(y < 9) return Math.round(Math.pow(10,y-6)) + " million years";
+  if(y < 10.14) return Math.round(Math.pow(10,y-9)) + " billion years";
+  return "longer than the age of the universe";
+}
+function act_strength(root, api){
+  let finished = false;
+  root.innerHTML = `<div class="warnline">⚠️ Use a made-up practice password, never your real one.</div>
+    <div class="field"><label for="sp">Practice password</label><input class="input mono" id="sp" autocomplete="off" spellcheck="false" autocapitalize="off" placeholder="Start typing"></div>
+    <div class="meter"><i id="mt"></i></div>
+    <div class="verdict" id="vd">Waiting for you to type</div>
+    <div class="stats">
+      <div class="stat"><div class="k">Length</div><div class="v" id="sl">0 characters</div></div>
+      <div class="stat"><div class="k">Character pool</div><div class="v" id="spool">0 symbols</div></div>
+      <div class="stat"><div class="k">Time to crack offline</div><div class="v" id="st">–</div></div>
+    </div>
+    <div id="warns"></div>
+    <div class="tasks">
+      <div class="task" id="k1"><span class="tick">✓</span>Survive more than 100 years of cracking</div>
+      <div class="task" id="k2"><span class="tick">✓</span>Contain no common words or famous passwords</div>
+    </div>
+    <p class="small muted" style="margin-top:10px">The estimate assumes an attacker testing 10 billion guesses per second against a stolen fast hash. Real cracking tools are smarter, so treat it as a rough guide.</p>
+    <div id="sfb" aria-live="polite"></div>`;
+  const sp = root.querySelector("#sp");
+  sp.addEventListener("input", () => {
+    const v = sp.value, a = analysePw(v);
+    const mt = root.querySelector("#mt"), vd = root.querySelector("#vd");
+    root.querySelector("#sl").textContent = v.length + (v.length === 1 ? " character" : " characters");
+    root.querySelector("#spool").textContent = a.pool + " symbols";
+    let label, color, pct;
+    const l10 = a.bits * Math.log10(2) - Math.log10(2) - 10;
+    const yearsLog = l10 - Math.log10(31557600);
+    if(!v){ label = "Waiting for you to type"; color = "var(--border-strong)"; pct = 0; root.querySelector("#st").textContent = "–"; }
+    else if(a.common){ label = "Cracked instantly"; color = "var(--bad)"; pct = 4; root.querySelector("#st").textContent = "instantly"; }
+    else {
+      root.querySelector("#st").textContent = fmtTime(l10);
+      pct = Math.min(100, Math.max(6, a.bits / 90 * 100));
+      if(a.bits < 30){ label = "Very weak"; color = "var(--bad)"; }
+      else if(a.bits < 45){ label = "Weak"; color = "var(--amber)"; }
+      else if(a.bits < 60){ label = "Okay"; color = "var(--accent)"; }
+      else if(a.bits < 80){ label = "Strong"; color = "var(--primary)"; }
+      else { label = "Very strong"; color = "var(--primary-dark)"; }
+    }
+    mt.style.width = pct + "%"; mt.style.background = color; vd.textContent = label;
+    const w = [];
+    if(v && a.common) w.push("🚫 This exact password is on the lists attackers try first.");
+    if(v && a.word) w.push(`📖 Contains the common word “${esc(a.word)}”. Dictionary attacks try words like this first.`);
+    if(v && /^\d+$/.test(v)) w.push("🔢 Only numbers gives a pool of just 10 symbols.");
+    if(v && v.length < 8) w.push("📏 Shorter than 8 characters.");
+    root.querySelector("#warns").innerHTML = w.map(x=>`<div class="feedback bad">${x}</div>`).join("");
+    const ok1 = !!v && !a.common && yearsLog >= 2;
+    const ok2 = !!v && !a.common && !a.word;
+    root.querySelector("#k1").classList.toggle("ok", ok1);
+    root.querySelector("#k2").classList.toggle("ok", ok2);
+    if(ok1 && ok2 && !finished){
+      finished = true;
+      root.querySelector("#sfb").innerHTML = `<div class="feedback good">🎉 Strong! Notice how much of the work length did. Remember that a strong password must also be <b>unique</b> for each site.</div>`;
+      api.complete();
+    }
+  });
+}
+
+function act_survive(root, api){
+  const REASONS = [
+    {i:"💸", t:"They’re cheap: there is no extra hardware to buy."},
+    {i:"🌍", t:"They work on every device and browser, anywhere."},
+    {i:"🙋", t:"Everyone already knows how to use them."},
+    {i:"🔄", t:"They’re easy to reset when forgotten."},
+    {i:"🧩", t:"Alternatives need card readers, special software, or a working phone with signal."},
+    {i:"🎒", t:"Physical tokens cost money, are awkward to carry, and get lost."}
+  ];
+  let revealed = 0, quizDone = false;
+  root.innerHTML = `<h4 class="part">Part A: why do passwords survive?</h4><div class="reveals" id="rv"></div>
+    <h4 class="part">Part B: match the password selection strategy</h4><div id="sq"></div>`;
+  const rv = root.querySelector("#rv");
+  function chk(){ if(revealed === REASONS.length && quizDone) api.complete(); }
+  REASONS.forEach((r,i) => {
+    const b = el(`<button class="reveal"><span class="small muted">Reason ${i+1}</span><div class="rv-t">❓ Tap to reveal</div></button>`);
+    b.addEventListener("click", () => {
+      if(b.classList.contains("on")) return;
+      b.classList.add("on"); b.querySelector(".rv-t").innerHTML = `${r.i} ${r.t}`; revealed++; chk();
+    });
+    rv.appendChild(b);
+  });
+  const E = "User education", C = "Computer-generated passwords", R = "Reactive password checking", P = "Proactive password checking";
+  choiceQuiz(root.querySelector("#sq"), {
+    options:[E, C, R, P],
+    hint:"Reactive checks happen <i>after</i> the password is chosen. Proactive checks happen <i>at the moment</i> you choose it.",
+    items:[
+      {q:"The IT department runs a workshop explaining why <code>123456</code> is a terrible password.", a:E, why:"Education is cheap, but many users ignore the advice."},
+      {q:"The system hands you a random password like <code>x7#Qp2!m</code>.", a:C, why:"Very strong, but hard to remember, so people tend to write it down."},
+      {q:"Every night the system runs its own password cracker against stored hashes and warns users whose passwords fall quickly.", a:R, why:"Useful, but weak passwords stay exposed until the next check runs."},
+      {q:"When you try to set <code>pakistan123</code>, the sign-up form immediately says “Too common, choose another”.", a:P, why:"The most promising approach: weak passwords never get in at all."}
+    ],
+    onDone: () => { quizDone = true; chk(); }
+  });
+}
+
+function act_cards(root, api){
+  const M = "Memory card 🧲", SM = "Smart card 🧠";
+  choiceQuiz(root, {
+    options:[M, SM],
+    hint:"Words like <b>chip</b>, <b>processor</b> or <b>contactless</b> point to a smart card. A magnetic stripe alone points to a memory card.",
+    items:[
+      {q:"A hotel room key card with a magnetic stripe", a:M, why:"It only holds data on the stripe. The door reader does all the work."},
+      {q:"Pakistan’s smart CNIC with an embedded chip", a:SM, why:"The chip can store and process data securely. Government cards like this are called eID cards."},
+      {q:"An old-style ATM card with only a magnetic stripe", a:M, why:"Stripe-only cards store data. The PIN you type adds the second factor."},
+      {q:"A contactless bank card you tap on the payment machine", a:SM, why:"Tap-to-pay cards contain a chip that runs a cryptographic protocol."},
+      {q:"An e-passport with a chip in the cover", a:SM, why:"The chip stores your photo and data and proves they haven’t been changed."},
+      {q:"A gym membership card with a magnetic stripe", a:M, why:"Stripe only, no processor."}
+    ],
+    onDone: api.complete
+  });
+}
+
+function act_otp(root, api){
+  const gen = () => String(Math.floor(Math.random()*1e6)).padStart(6,"0");
+  let code = gen(), prev = null, t = 30, t1 = false, t2 = false;
+  root.innerHTML = `<div class="otp-grid">
+      <div class="token"><div class="token-brand">🔑 SecureToken</div><div class="token-screen" id="code" aria-live="polite"></div><div class="token-bar"><i id="bar"></i></div><div class="token-t" id="tt"></div></div>
+      <div class="portal"><div class="portal-h">🏫 University VPN login</div>
+        <input class="input" value="${esc(S.roll || "student")}" disabled aria-label="Username">
+        <input class="input mono" id="oin" inputmode="numeric" maxlength="7" placeholder="6-digit code" autocomplete="off" aria-label="One-time code">
+        <button class="btn" id="ogo">Log in</button>
+        <div class="row wrap"><button class="btn btn-soft btn-sm" id="ff">⏩ Fast-forward 30 s</button><button class="btn btn-soft btn-sm" id="old" disabled>🕵️ Use the old code</button></div>
+      </div>
+    </div>
+    <div class="tasks">
+      <div class="task" id="o1"><span class="tick">✓</span>Log in with the current code</div>
+      <div class="task" id="o2"><span class="tick">✓</span>Try an expired code and see it rejected</div>
+    </div>
+    <div id="ofb" aria-live="polite"></div>`;
+  const codeEl = root.querySelector("#code"), bar = root.querySelector("#bar"), tt = root.querySelector("#tt"), oin = root.querySelector("#oin"), oldB = root.querySelector("#old"), fb = root.querySelector("#ofb");
+  function draw(){ codeEl.textContent = code.slice(0,3) + " " + code.slice(3); bar.style.width = (t/30*100) + "%"; tt.textContent = "New code in " + t + " s"; oldB.disabled = !prev; }
+  function rotate(){ prev = code; let n = gen(); while(n === prev) n = gen(); code = n; t = 30; draw(); }
+  const iv = setInterval(() => { t--; if(t <= 0) rotate(); else draw(); }, 1000);
+  cleanups.push(() => clearInterval(iv));
+  function chk(){ if(t1 && t2) api.complete(); }
+  function login(){
+    const v = oin.value.replace(/\D/g,"");
+    if(!v){ fb.innerHTML = `<div class="feedback">Type the 6 digits shown on the token.</div>`; return; }
+    if(v === code){
+      t1 = true; root.querySelector("#o1").classList.add("ok");
+      fb.innerHTML = `<div class="feedback good"><b>✅ Access granted.</b> The server calculated the same code from the shared secret and the current time. ${t2 ? "" : "Now press “Fast-forward 30 s” and try the old code."}</div>`;
+    } else if(prev && v === prev){
+      t2 = true; root.querySelector("#o2").classList.add("ok");
+      fb.innerHTML = `<div class="feedback bad"><b>⛔ Rejected: that code has expired.</b> Even if an attacker had stolen it, it is now useless. ${t1 ? "" : "Now log in with the current code."}</div>`;
+    } else {
+      fb.innerHTML = `<div class="feedback bad"><b>❌ Wrong code.</b> Check the digits on the token.</div>`;
+    }
+    chk();
+  }
+  root.querySelector("#ogo").addEventListener("click", login);
+  oin.addEventListener("keydown", e => { if(e.key === "Enter") login(); });
+  root.querySelector("#ff").addEventListener("click", () => { rotate(); fb.innerHTML = `<div class="feedback">⏩ 30 seconds later: the token shows a new code and the old one has expired.</div>`; });
+  oldB.addEventListener("click", () => { oin.value = prev; fb.innerHTML = `<div class="feedback">The old code is in the box. Now press <b>Log in</b>.</div>`; });
+  draw();
+}
+
+function act_bioMode(root, api){
+  const V = "Verification (1:1)", I = "Identification (1:N)";
+  choiceQuiz(root, {
+    options:[V, I],
+    hint:"Did the person first claim an identity (typed an ID, or it’s their own phone)? That’s verification. Is the system searching everyone with no claim? That’s identification.",
+    items:[
+      {q:"Your phone unlocks with your face. You are the only person enrolled.", a:V, why:"It compares you with one template: the owner’s."},
+      {q:"Police search a fingerprint from a crime scene against the national database.", a:I, why:"There is no claimed identity, so the system searches everyone."},
+      {q:"At the office you type your employee ID, then scan your finger.", a:V, why:"You claimed an ID first, so it’s a one-to-one check."},
+      {q:"An airport camera scans faces in a crowd to find a wanted person.", a:I, why:"It searches many templates to find a match."},
+      {q:"Your bank’s phone line checks that your voice matches the account holder you said you are.", a:V, why:"You claimed to be the account holder, and your voice backs up the claim."},
+      {q:"An attendance machine: you just place your finger and it finds your name among all staff.", a:I, why:"No ID was typed, so the machine searches every enrolled person (one-to-many)."}
+    ],
+    onDone: api.complete
+  });
+}
+
+function erf(x){ const s = Math.sign(x); x = Math.abs(x); const t = 1/(1+0.3275911*x); const y = 1-(((((1.061405429*t-1.453152027)*t)+1.421413741)*t-0.284496736)*t+0.254829592)*t*Math.exp(-x*x); return s*y; }
+const Phi = z => 0.5*(1+erf(z/Math.SQRT2));
+const pdf = (x,m,sd) => Math.exp(-0.5*((x-m)/sd)**2)/(sd*Math.sqrt(2*Math.PI));
+
+function act_threshold(root, api){
+  const W=600, H=268, x0=40, x1=580, yb=212, yt=34, MI=35, MG=65, SD=10, PMAX=pdf(0,0,SD);
+  const X = s => x0 + s/100*(x1-x0), Y = p => yb - p/PMAX*(yb-yt);
+  const line = m => { let d=""; for(let s=0;s<=100;s+=1){ d += (s?"L":"M") + X(s).toFixed(1) + " " + Y(pdf(s,m,SD)).toFixed(1); } return d; };
+  const area = (m,a,b) => { if(b<=a) return ""; let d = `M${X(a).toFixed(1)} ${yb}`; for(let s=a;s<=b;s+=0.5){ d += `L${X(s).toFixed(1)} ${Y(pdf(s,m,SD)).toFixed(1)}`; } return d + `L${X(b).toFixed(1)} ${yb}Z`; };
+  let m1 = false, m2 = false;
+  root.innerHTML = `<div class="chartbox"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Two score curves, impostors and genuine users, with a movable threshold line">
+      <path id="sImp" class="s-imp"/><path id="sGen" class="s-gen"/>
+      <path class="c-imp" d="${line(MI)}"/><path class="c-gen" d="${line(MG)}"/>
+      <line class="axis" x1="${x0}" y1="${yb}" x2="${x1}" y2="${yb}"/>
+      <text class="lbl strong" x="${X(MI)}" y="${yt-12}" text-anchor="middle">Impostors</text>
+      <text class="lbl strong" x="${X(MG)}" y="${yt-12}" text-anchor="middle">Genuine users</text>
+      <text class="lbl" x="${x0}" y="${yb+20}">Low match score</text>
+      <text class="lbl" x="${x1}" y="${yb+20}" text-anchor="end">High match score</text>
+      <line id="thrL" class="thr" y1="${yt-4}" y2="${yb}"/>
+      <text id="thrT" class="lbl strong" y="${yb+42}" text-anchor="middle"></text>
+    </svg></div>
+    <div class="field" style="margin-top:12px"><label for="rng">Threshold: <b id="tv"></b>. The system accepts if the match score is at or above it.</label><input type="range" min="10" max="90" step="1" value="40" id="rng"></div>
+    <div class="stats">
+      <div class="stat rate fm"><div class="k">False match rate</div><div class="v" id="fm"></div><div class="small muted">Impostors wrongly accepted (red area)</div></div>
+      <div class="stat rate fnm"><div class="k">False non-match rate</div><div class="v" id="fnm"></div><div class="small muted">Genuine users wrongly rejected (amber area)</div></div>
+    </div>
+    <div class="tasks">
+      <div class="task" id="m1"><span class="tick">✓</span>Mission 1, bank vault: get the false match rate below 1%</div>
+      <div class="task" id="m2"><span class="tick">✓</span>Mission 2: find the Equal Error Rate, where both rates are within 1% of each other</div>
+    </div>
+    <div id="tfb" aria-live="polite"></div>`;
+  const rng = root.querySelector("#rng"), fb = root.querySelector("#tfb");
+  function update(){
+    const t = +rng.value;
+    root.querySelector("#sImp").setAttribute("d", area(MI, t, 100));
+    root.querySelector("#sGen").setAttribute("d", area(MG, 0, t));
+    const L = root.querySelector("#thrL"); L.setAttribute("x1", X(t)); L.setAttribute("x2", X(t));
+    const T = root.querySelector("#thrT"); T.setAttribute("x", X(t)); T.textContent = "threshold " + t;
+    root.querySelector("#tv").textContent = t;
+    const fmr = (1 - Phi((t-MI)/SD))*100, fnmr = Phi((t-MG)/SD)*100;
+    root.querySelector("#fm").textContent = fmr.toFixed(1) + "%";
+    root.querySelector("#fnm").textContent = fnmr.toFixed(1) + "%";
+    if(fmr < 1 && !m1){
+      m1 = true; root.querySelector("#m1").classList.add("ok");
+      fb.innerHTML = `<div class="feedback good"><b>Mission 1 complete!</b> Impostors almost never get in. But look: about <b>${fnmr.toFixed(0)}%</b> of genuine users are now rejected. That’s the price of high security.</div>`;
+    }
+    if(Math.abs(fmr - fnmr) < 1 && !m2){
+      m2 = true; root.querySelector("#m2").classList.add("ok");
+      fb.innerHTML = `<div class="feedback good"><b>Mission 2 complete!</b> At the Equal Error Rate both errors are about <b>${fmr.toFixed(1)}%</b>. Researchers use the EER to compare biometric systems: lower is better.</div>`;
+    }
+    if(m1 && m2) api.complete();
+  }
+  rng.addEventListener("input", update);
+  update();
+}
+
+async function act_challenge(root, api){
+  root.innerHTML = `<p class="muted">Setting up the server…</p>`;
+  const P = "green7"; const hP = await sha256(P);
+  let r1, r2, resp1, exp2;
+  async function prep(){ r1 = rhex(8); r2 = rhex(8); resp1 = await sha256(r1 + hP); exp2 = await sha256(r2 + hP); }
+  await prep();
+  const sh = x => x.slice(0,12) + "…";
+  let step = 0, simDone = false, mcqDone = false;
+  root.innerHTML = `<div class="store small">🖥️ The server’s password file stores only <code>h(P) = ${sh(hP)}</code> for user <b>student</b>. The real password <code>${P}</code> is known only to the user.</div>
+    <div class="seq-head"><div>💻 Client (you)</div><div>🖥️ University server</div></div>
+    <div class="seq" id="seq"></div>
+    <div class="row wrap" style="margin-top:12px"><button class="btn" id="nx">▶ Next step</button><button class="btn btn-ghost btn-sm" id="rs">↺ Restart</button></div>
+    <div id="thr" hidden>
+      <h4 class="part">Threats to remote authentication</h4>
+      <div class="threats">
+        <div><b>Client attack</b>Pretending to be the user at the login screen, for example by guessing.</div>
+        <div><b>Host attack</b>Breaking into the server to steal stored passwords, token codes or biometric templates.</div>
+        <div><b>Eavesdropping</b>Watching or listening to learn a password, including over someone’s shoulder.</div>
+        <div><b>Replay</b>Resending a recorded login message, as Eve just tried.</div>
+        <div><b>Trojan horse</b>A fake app, page or device that captures your password.</div>
+        <div><b>Denial of service</b>Flooding the login system so real users can’t get in.</div>
+      </div>
+      <h4 class="part">Quick check</h4><div id="tq"></div>
+    </div>`;
+  const seq = root.querySelector("#seq"), nx = root.querySelector("#nx");
+  const script = () => [
+    {cls:"to-server", dir:"💻 Client ──▶ 🖥️ Server", pay:"ID = student", note:"Step 1: the client says who it claims to be (identification)."},
+    {cls:"to-client", dir:"🖥️ Server ──▶ 💻 Client", pay:`Challenge: nonce r = ${r1}`, note:"Step 2: the server picks a fresh random <b>nonce</b>, a number used only once."},
+    {cls:"calc", dir:"💻 Client calculates privately", pay:`h(P) = ${sh(hP)}<br>response = h(r + h(P)) = ${sh(resp1)}`, note:"Step 3: the client mixes the nonce with its hashed password."},
+    {cls:"to-server", dir:"💻 Client ──▶ 🖥️ Server", pay:`Response = ${sh(resp1)}`, note:"Step 4: only this one-time response crosses the network, never the password."},
+    {cls:"ok", dir:"🖥️ Server checks", pay:`expected = h(r + stored h(P)) = ${sh(resp1)} ✔ match`, note:"✅ Access granted! Now let’s see what an eavesdropper can do."},
+    {cls:"calc eve", dir:"😈 Eve, listening on the Wi‑Fi", pay:`Recorded: Response = ${sh(resp1)}`, note:"Eve copied the response as it travelled over the network."},
+    {cls:"to-server eve", dir:"😈 Eve ──▶ 🖥️ Server", pay:"ID = student", note:"Eve pretends to be the student."},
+    {cls:"to-client", dir:"🖥️ Server ──▶ 😈 Eve", pay:`Challenge: NEW nonce r = ${r2}`, note:"A brand-new nonce, different from last time."},
+    {cls:"to-server eve", dir:"😈 Eve ──▶ 🖥️ Server", pay:`Response = ${sh(resp1)} (old copy)`, note:"Eve doesn’t know the password, so she can’t calculate a new response. She replays the old one."},
+    {cls:"bad", dir:"🖥️ Server checks", pay:`expected = h(${r2} + h(P)) = ${sh(exp2)} ✘ no match`, note:"⛔ Rejected! The old response only fitted the old nonce. Replay attack defeated."}
+  ];
+  function label(){
+    if(step === 5) nx.innerHTML = "😈 Let Eve try a replay";
+    else if(step >= 10) nx.innerHTML = "✓ Simulation finished";
+    else nx.innerHTML = "▶ Next step";
+    nx.disabled = step >= 10;
+  }
+  nx.addEventListener("click", () => {
+    const s = script()[step]; if(!s) return;
+    const m = el(`<div class="msg ${s.cls}"><div class="dir">${s.dir}</div><div class="pay">${s.pay}</div><div class="note">${s.note}</div></div>`);
+    seq.appendChild(m);
+    try{ m.scrollIntoView({block:"nearest", behavior: reduceMotion ? "auto" : "smooth"}); }catch(e){}
+    step++; label();
+    if(step >= 10 && !simDone){
+      simDone = true; root.querySelector("#thr").hidden = false;
+      choiceQuiz(root.querySelector("#tq"), {
+        shuffle:true,
+        hint:"Think about <b>what</b> the attacker is targeting: you, the server, the network, or the service itself.",
+        items:[
+          {q:"A fake university login page looks exactly like the real one and saves whatever password you type.", a:"Trojan horse", opts:["Trojan horse","Replay","Host attack","Denial of service"], why:"A Trojan horse pretends to be a genuine app, page or device in order to capture credentials."},
+          {q:"An attacker floods the login server with millions of attempts, so real students can’t log in before the deadline.", a:"Denial of service", opts:["Denial of service","Client attack","Eavesdropping","Replay"], why:"Denial of service aims to disable the authentication service, not to steal anything."},
+          {q:"An attacker breaks into the server and copies the file of stored password hashes.", a:"Host attack", opts:["Host attack","Client attack","Trojan horse","Replay"], why:"Host attacks target the stored file of passwords, token codes or biometric templates."},
+          {q:"An attacker records your login message and sends the same message again later.", a:"Replay", opts:["Replay","Eavesdropping","Host attack","Denial of service"], why:"Exactly what Eve tried, and a fresh nonce defeats it."}
+        ],
+        onDone: () => { mcqDone = true; if(simDone) api.complete(); }
+      });
+    }
+  });
+  root.querySelector("#rs").addEventListener("click", async () => { await prep(); step = 0; seq.innerHTML = ""; label(); });
+  label();
+}
+
+/* ---------- Modules ---------- */
+const MODULES = [
+{
+  title:"Digital User Authentication Principles and the Four Factors", icon:"🧭",
+  blurb:"What authentication really means, the NIST model, and the four ways to prove who you are.",
+  takeaways:[
+    "Authentication = identification (a claim) + verification (proof).",
+    "The NIST model: registration, then credential, then authentication, with roles such as Credential Service Provider, Verifier and Relying Party.",
+    "The four factors: Know, Have, Are (static biometrics) and Do (dynamic biometrics).",
+    "True multi-factor authentication combines different factor types."
+  ],
+  steps:[
+    { title:"Identification vs verification",
+      concept:`<p><b>Authentication</b> is how a computer system checks that you really are who you say you are. Every login you have ever done has two parts:</p>
+        <div class="two-col"><div class="mini"><div class="mini-h">1. Identification</div>You <b>claim</b> an identity: you type a username, email or roll number.</div>
+        <div class="mini"><div class="mini-h">2. Verification</div>You <b>prove</b> the claim: you enter a password, scan a finger or type a one-time code.</div></div>
+        <p class="analogy">🏫 <b>Exam-hall analogy:</b> telling the invigilator your roll number is identification. Showing your student card with your photo on it is verification.</p>`,
+      key:"Identification is <b>who you say you are</b>. Verification is <b>proof that it’s true</b>. Authentication needs both.",
+      task:"Read each situation and decide: is the person claiming an identity, or proving it?",
+      hints:["Claiming means just saying a name or ID. Anyone can type a username!","Proving means giving something only the real person should know, have or be."],
+      activity:act_idVerify },
+    { title:"The NIST model: three phases",
+      concept:`<p>The U.S. standards body <b>NIST</b> (guideline SP 800-63) describes digital authentication as a story in three phases. Think of how you got your university portal account:</p>
+        <div class="phases"><div class="phase">📝<b>Registration</b><span class="small muted">Prove who you are once</span></div><span class="phase-arrow">▶</span>
+        <div class="phase">🎫<b>Credential</b><span class="small muted">Receive your login details</span></div><span class="phase-arrow">▶</span>
+        <div class="phase">🔓<b>Authentication</b><span class="small muted">Use them every time you log in</span></div></div>
+        <div class="roles">
+          <div class="role"><b>Applicant</b>The person asking for an account.</div>
+          <div class="role"><b>Registration Authority (RA)</b>Checks the applicant’s identity, for example their CNIC at admission.</div>
+          <div class="role"><b>Credential Service Provider (CSP)</b>Issues the credential (account, password, token) and keeps the records.</div>
+          <div class="role"><b>Subscriber</b>A registered person who now holds a credential.</div>
+          <div class="role"><b>Claimant</b>The person trying to log in, claiming to be a subscriber.</div>
+          <div class="role"><b>Verifier</b>Checks the claimant’s proof.</div>
+          <div class="role"><b>Relying Party (RP)</b>The app or portal that trusts the verifier’s answer and grants access.</div>
+          <div class="role"><b>Credential</b>A record that binds an identity to a token or authenticator the subscriber holds.</div>
+        </div>`,
+      key:"The same person gets different names along the journey: <b>Applicant, then Subscriber, then Claimant</b>.",
+      task:"Click the events in the order they happen, from first to last.",
+      hints:["You can’t log in before you have an account, so registration always comes first.","Identity checking (RA) comes before the credential is issued (CSP). The Relying Party acts last."],
+      activity:act_nistOrder },
+    { title:"The four factors",
+      concept:`<p>Every way of verifying a user falls into one of <b>four factors</b>. A handy memory trick: <b>Know, Have, Are, Do</b>.</p>
+        <p>The first two are the oldest: a password you know, or a key you carry. The last two use <b>biometrics</b>, measurements of you. <i>Static</i> biometrics measure your body; <i>dynamic</i> biometrics measure your behaviour.</p>`,
+      key:"Know = memory. Have = an object (a token). Are = your body. Do = your behaviour.",
+      task:"Tap each card to flip it and discover examples and weaknesses. Flip all four to finish.",
+      hints:["Click directly on a card to flip it, and click again to flip it back.","Are and Do are both biometrics: Are is what your body is, Do is how you behave."],
+      activity:act_flip },
+    { title:"Sort the factors",
+      concept:`<p>Time to practise. Real systems mix and match these factors, so a security professional must recognise each one instantly, whether it’s on a bank app, an office door or the exam hall’s attendance machine.</p>`,
+      key:"In your head → Know. In your pocket → Have. In your body → Are. In your actions → Do.",
+      task:"Tap an item, then tap the factor box it belongs to. Sort all 12.",
+      hints:["Tap an item first (it turns green), then tap a box.","Signature and voice feel like your body, but they are actions you perform, so they belong in Do."],
+      activity:act_sort },
+    { title:"Is it really multi-factor?",
+      concept:`<p><b>Multi-factor authentication (MFA)</b> means using <b>two or more different factor types</b> together. If one factor is stolen, the attacker still needs the other.</p>
+        <p>⚠️ Two things from the <i>same</i> factor do not count. A password plus a PIN is still only “something you know”.</p>`,
+      key:"MFA means different <b>types</b>, not just more <b>things</b>.",
+      task:"Decide whether each combination is true multi-factor authentication.",
+      hints:["Label each part with its factor (Know, Have, Are, Do). Are the labels different?","Fingerprint and face are both Are, so they are the same type."],
+      activity:act_mfa }
+  ]
+},
+{
+  title:"Password-Based Authentication and Its Attacks", icon:"🔑",
+  blurb:"How systems store passwords, how attackers break them, and why passwords still rule.",
+  takeaways:[
+    "Systems store a hash of your password, never the password itself.",
+    "Salt makes identical passwords look different and slows down dictionary attacks.",
+    "There are eight classic password attacks, each with a matching defence (for example, account lockout).",
+    "Length is your best weapon. Passwords survive because they are cheap, universal and familiar."
+  ],
+  steps:[
+    { title:"How a system stores your password",
+      concept:`<p>When you create an account, a well-built system does <b>not</b> save your password. It runs it through a <b>hash function</b>, a one-way mathematical blender, and saves only the result: the <i>hash</i>.</p>
+        <div class="flow"><span class="box mono">mango123</span><span>▶</span><span class="box fn">hash function</span><span>▶</span><span class="box mono">3f9a…c21</span><span class="small muted">stored in the password file</span></div>
+        <p>At login, the system hashes whatever you type and compares the two hashes. The same input always gives the same hash, but you can’t turn a hash back into the password.</p>`,
+      key:"Systems compare <b>hashes</b>, not passwords. If the file is stolen, attackers get scrambled values instead of your password.",
+      task:"Part A: type in the box and change one character at a time. Part B: log in as sana.",
+      hints:["Part B: Sana loves fruit.","Her password is a fruit name followed by 123.","Try mango123."],
+      activity:act_hash },
+    { title:"Salt: same password, different hash",
+      concept:`<p>A <b>salt</b> is a random value the system adds to your password <i>before</i> hashing it. The salt is stored openly next to the hash; it doesn’t need to be secret.</p>
+        <p>Salt does three jobs:</p>
+        <ol><li>Users who choose the <b>same password</b> get <b>different hashes</b>, so duplicates are hidden.</li>
+        <li>It makes <b>offline dictionary attacks</b> much harder: an attacker must redo the work for every possible salt. A salt of <i>b</i> bits multiplies the work by 2<sup>b</sup>.</li>
+        <li>It hides whether you used the <b>same password on two systems</b>.</li></ol>`,
+      key:"Stored record = username + salt + hash(salt + password).",
+      task:"Ali and Sara both picked the password pakistan1. Switch between “Without salt” and “With salt” and compare the stored file, then answer the question.",
+      hints:["Look at the hash column. Are any two rows identical?","Without salt, identical passwords produce identical hashes, and an attacker can spot them."],
+      activity:act_salt },
+    { title:"Eight classic password attacks",
+      concept:`<p>Attackers have many ways around passwords. Here are the eight classic ones you need to know:</p>
+        <div class="roles">
+          <div class="role"><b>📚 Offline dictionary attack</b>Steal the hash file, then test millions of guesses at home.</div>
+          <div class="role"><b>🎯 Specific account attack</b>Keep guessing passwords for one chosen account.</div>
+          <div class="role"><b>📈 Popular password attack</b>Try one very common password on many accounts.</div>
+          <div class="role"><b>🕵️ Guessing against a single user</b>Research the person, then guess.</div>
+          <div class="role"><b>💻 Workstation hijacking</b>Use a logged-in computer left unattended.</div>
+          <div class="role"><b>📝 Exploiting user mistakes</b>Written-down, shared or default passwords.</div>
+          <div class="role"><b>🔁 Exploiting multiple password use</b>One leaked password opens many accounts.</div>
+          <div class="role"><b>📡 Electronic monitoring</b>Capture the password as it travels over a network.</div>
+        </div>`,
+      key:"Every attack has a matching defence. Security is about pairing them correctly.",
+      task:"Read each scenario, pick the attack, and unlock its defence.",
+      hints:["Is the attacker online (trying the login page) or offline (holding the stolen file)?","One account with many guesses is a specific account attack. One password tried on many accounts is a popular password attack."],
+      activity:act_attacks },
+    { title:"How long would it take to crack?",
+      concept:`<p>How do attackers turn a stolen hash back into a password? They <b>guess</b>, hash each guess, and compare. Two famous techniques:</p>
+        <div class="two-col"><div class="mini"><div class="mini-h">📖 Dictionary attack</div>Tries common passwords and words first, plus variations like <code>Pakistan@123</code>.</div>
+        <div class="mini"><div class="mini-h">🌈 Rainbow tables</div>Huge pre-computed lists of hashes for instant lookups. Defeated by a large salt and a long hash.</div></div>
+        <p>Modern cracking rigs can try <b>billions</b> of guesses per second against a fast hash. The defence you control best is <b>length</b>.</p>`,
+      key:"Long beats clever: <code>river-lamp-cloud-seven</code> is far stronger than <code>P@ss1</code>.",
+      task:"Invent a practice password that would survive more than 100 years of cracking and contains no common words.",
+      hints:["Common words like pakistan, password or cricket are tried first, so avoid them.","Try four random unrelated words joined with dashes, like lamp-river-cloud-seven.","Or aim for 14 or more characters mixing letters, numbers and symbols."],
+      activity:act_strength },
+    { title:"Why passwords survive, and how to choose them",
+      concept:`<p>Passwords have so many weaknesses, so why are they still everywhere? Reveal the six reasons in the activity.</p>
+        <p>Since passwords aren’t going away, organisations use <b>password selection strategies</b> to make them stronger:</p>
+        <div class="roles">
+          <div class="role"><b>User education</b>Teach people what makes a good password.</div>
+          <div class="role"><b>Computer-generated passwords</b>The system creates a random password for you.</div>
+          <div class="role"><b>Reactive password checking</b>The system periodically runs its own cracker to find weak passwords.</div>
+          <div class="role"><b>Proactive password checking</b>Weak passwords are rejected at the moment you choose them.</div>
+        </div>`,
+      key:"Passwords survive because they are <b>cheap, universal and familiar</b>, so we make them stronger rather than remove them.",
+      task:"Reveal all six reasons, then match each description to the right strategy.",
+      hints:["Reactive checking happens after the password is chosen. Proactive checking happens while you choose it.","Computer-generated passwords are strong but hard to remember."],
+      activity:act_survive }
+  ]
+},
+{
+  title:"Tokens, Biometrics and Remote User Authentication", icon:"🛡️",
+  blurb:"Cards and OTP tokens, how biometrics decide, and logging in safely over a network.",
+  takeaways:[
+    "Memory cards only store data; smart cards have a chip that can compute.",
+    "OTP tokens generate a new code about every 30 seconds, so a stolen code soon expires.",
+    "Biometric verification is 1:1 and identification is 1:N. The threshold trades false matches against false non-matches.",
+    "Challenge–response with a fresh nonce defeats eavesdropping and replay."
+  ],
+  steps:[
+    { title:"Memory cards vs smart cards",
+      concept:`<p>A <b>token</b> is something you <b>have</b> that proves who you are. There are two main kinds of card:</p>
+        <div class="two-col"><div class="mini"><div class="mini-h">🧲 Memory card</div>Stores data but <b>cannot process it</b>, like a hotel key card with a magnetic stripe. Often paired with a PIN. Drawbacks: it needs a special reader, it can be lost, and users find it annoying.</div>
+        <div class="mini"><div class="mini-h">🧠 Smart card or token</div>Has a <b>built-in chip</b> (microprocessor) that can run security protocols. It may be contact or contactless. Examples: smart CNIC, e-passport, tap-to-pay bank card.</div></div>
+        <p>Smart tokens can authenticate in three ways: <b>static</b> (proving a fixed secret), as a <b>dynamic password generator</b> (a new one-time password every so often) or with <b>challenge–response</b> (answering a random challenge from the computer). Government-issued smart cards are called <b>electronic identity (eID) cards</b>.</p>`,
+      key:"Memory card = stores only. Smart card = stores <b>and computes</b>.",
+      task:"Decide whether each card is a memory card or a smart card.",
+      hints:["Look for words like chip, processor or contactless: those mean smart.","A magnetic stripe on its own means a memory card."],
+      activity:act_cards },
+    { title:"One-time password tokens",
+      concept:`<p>A <b>one-time password (OTP) token</b> is a smart token that works as a <b>dynamic password generator</b>. The token and the server share a secret key and the current time, so both calculate the <b>same 6-digit code</b>, which changes every 30 seconds.</p>
+        <p>You see this in authenticator apps, bank security tokens and many university VPNs.</p>`,
+      key:"A stolen OTP is useful for only a few seconds. After that it’s worthless.",
+      task:"Task 1: log in using the code on the token. Task 2: fast-forward time, then try the old code to see what an attacker would get.",
+      hints:["Copy the 6 digits shown on the green token into the login box.","After logging in, press “Fast-forward 30 s”, then “Use the old code”, then Log in."],
+      activity:act_otp },
+    { title:"How biometric systems work",
+      concept:`<p>A <b>biometric system</b> authenticates you using your body (static: face, fingerprint, hand geometry, retina, iris) or your behaviour (dynamic: voice, signature).</p>
+        <div class="phases"><div class="phase">🧾<b>Enrollment</b><span class="small muted">Your trait is scanned and stored as a <i>template</i> of extracted features</span></div><span class="phase-arrow">▶</span>
+        <div class="phase">🎯<b>Verification (1:1)</b><span class="small muted">“Am I who I claim to be?” Compare against one template</span></div><span class="phase-arrow">or</span>
+        <div class="phase">🔎<b>Identification (1:N)</b><span class="small muted">“Who is this person?” Search all templates</span></div></div>`,
+      key:"Verification answers “Is this Sana?” Identification answers “Who is this?”",
+      task:"Decide which mode each system is using.",
+      hints:["Did the person first claim an identity (typed an ID, or it’s their own phone)? Then it’s verification.","Is the system searching a whole database with no claim? Then it’s identification."],
+      activity:act_bioMode },
+    { title:"Biometric accuracy: the threshold",
+      concept:`<p>Biometric readings are never identical twice: your finger might be dry, or the light poor. So the system calculates a <b>matching score</b> and accepts you if the score is at or above a <b>threshold</b>.</p>
+        <div class="two-col"><div class="mini"><div class="mini-h">🚨 False match</div>An <b>impostor is accepted</b> (also called false acceptance). Dangerous for security.</div>
+        <div class="mini"><div class="mini-h">😤 False non-match</div>The <b>real user is rejected</b> (also called false rejection). Annoying for users.</div></div>
+        <p>Raising the threshold makes false matches rarer but rejects real users more often. The point where both error rates are equal is the <b>Equal Error Rate (EER)</b>.</p>`,
+      key:"Security vs convenience: you can’t push both errors to zero at the same time.",
+      task:"Move the threshold slider to complete both missions.",
+      hints:["To stop impostors, push the threshold to the right (stricter).","The EER is where the red and amber areas are the same size. Try the middle of the slider."],
+      activity:act_threshold },
+    { title:"Remote authentication: challenge–response",
+      concept:`<p><b>Remote user authentication</b> happens over a network, the internet or Wi‑Fi, where attackers can listen. Sending your password as it is would be a gift to eavesdroppers, and even an encrypted password could be recorded and <b>replayed</b>.</p>
+        <p>The fix is a <b>challenge–response protocol</b>. The server sends a fresh random number called a <b>nonce</b> (“number used once”). Your device combines it with your hashed password and sends back the result. Because the nonce changes every time, an old response is useless.</p>`,
+      key:"The password never travels. Only a one-time response does.",
+      task:"Step through a real login, then watch Eve the attacker try a replay. Finish with four quick threat questions.",
+      hints:["Press “Next step” to move the protocol forward one message at a time.","Compare the nonce in Eve’s session with the one in the original session."],
+      activity:act_challenge }
+  ]
+}
+];
+
+/* ---------- Quiz ---------- */
+const QUIZ = [
+  {topic:"Lesson 1", q:"Typing your username on a login page is an example of…", o:["Identification","Verification","Authorization","Encryption"], a:0, ex:"Typing a username only claims an identity. Verification comes next, with the password."},
+  {topic:"Lesson 1", q:"Which of these is “something you know”?", o:["A smart card","A PIN","A fingerprint","A voice pattern"], a:1, ex:"A PIN is memorised. A smart card is Have, a fingerprint is Are and a voice pattern is Do."},
+  {topic:"Lesson 1", q:"Typing rhythm and a handwritten signature belong to which factor?", o:["Something you know","Something you have","Something you are (static biometrics)","Something you do (dynamic biometrics)"], a:3, ex:"They are behaviours you perform, so they are dynamic biometrics: something you do."},
+  {topic:"Lesson 1", q:"Which combination is true multi-factor authentication?", o:["Password + security question","Fingerprint + face scan","ATM card + PIN","Two different passwords"], a:2, ex:"ATM card (Have) + PIN (Know) uses two different factor types. The others repeat one type."},
+  {topic:"Lesson 1", q:"In the NIST model, who issues the credential (such as an account or token) to the subscriber?", o:["The Relying Party","The Credential Service Provider","The Claimant","The Verifier"], a:1, ex:"The Credential Service Provider (CSP) issues credentials after the Registration Authority has checked identity."},
+  {topic:"Lesson 2", q:"Why do systems store a hash of a password instead of the password itself?", o:["Hashes are shorter to type","If the file is stolen, the actual passwords aren’t directly revealed","Hashing makes the internet connection faster","So that administrators can read passwords easily"], a:1, ex:"Hashes are one-way: attackers who steal the file still have to guess to recover passwords."},
+  {topic:"Lesson 2", q:"What is one purpose of adding a salt before hashing?", o:["It makes the password easier to remember","It stops users with the same password from having the same stored hash","It encrypts the network connection","It removes the need for a password"], a:1, ex:"Different random salts give different hashes even for identical passwords, which hides duplicates."},
+  {topic:"Lesson 2", q:"Trying the password 123456 against thousands of different accounts is called…", o:["A specific account attack","A popular password attack","Workstation hijacking","A replay attack"], a:1, ex:"One popular password tried on many accounts is a popular password attack."},
+  {topic:"Lesson 2", q:"Which countermeasure best stops a specific account attack?", o:["Lock the account after several failed attempts","Allow unlimited login attempts","Use a bigger monitor","Write the password on paper"], a:0, ex:"Account lockout limits how many guesses an attacker can make against one account."},
+  {topic:"Lesson 2", q:"Rainbow table attacks are best defeated by…", o:["Using short passwords","A large salt and a long hash","Reusing one password everywhere","Turning off the keyboard"], a:1, ex:"Pre-computed tables are useless when every password is mixed with a large random salt."},
+  {topic:"Lesson 2", q:"Why are passwords still so widely used?", o:["They are impossible to crack","They are cheap, need no extra hardware and everyone knows how to use them","The law requires them","Biometrics don’t work"], a:1, ex:"Low cost, universal support and familiarity keep passwords everywhere, despite their weaknesses."},
+  {topic:"Lesson 3", q:"A memory card differs from a smart card because a memory card…", o:["Contains a processor","Stores data but cannot process it","Works without any reader","Is always biometric"], a:1, ex:"Memory cards (like magnetic stripe cards) only store data. Smart cards have a chip that computes."},
+  {topic:"Lesson 3", q:"An OTP code is safer than a fixed password mainly because…", o:["It is longer","It changes and soon expires, so a stolen code becomes useless","It contains letters","It is sent by email"], a:1, ex:"OTP codes are valid only for a short window, which limits what an attacker can do with a stolen one."},
+  {topic:"Lesson 3", q:"If you raise the threshold of a biometric system, what happens?", o:["False matches go down, but genuine users are rejected more often","Both error rates go up","False matches go up","Nothing changes"], a:0, ex:"A stricter threshold blocks more impostors but also rejects more genuine users: the security vs convenience trade-off."},
+  {topic:"Lesson 3", q:"In challenge–response authentication, why does a replayed old response fail?", o:["The server sends a fresh random nonce each time, so the expected response changes","The password is emailed to the user","The server forgets the user","The response is too long to send"], a:0, ex:"Each login uses a new nonce, so a response recorded earlier no longer matches."}
+];
+function gradeOf(sc){ if(sc>=13) return {g:"A", t:"Excellent"}; if(sc>=11) return {g:"B", t:"Very good"}; if(sc>=9) return {g:"C", t:"Pass"}; return {g:"–", t:"Needs revision"}; }
+
+/* ---------- Top bar ---------- */
+function renderTop(){
+  if(mode === "welcome" || !S.name){
+    topbar.innerHTML = `<div class="topbar-in"><div class="brand"><span class="brand-ic">🔐</span><span class="brand-t">Activity Lab<small>User Authentication</small></span></div></div>`;
+    return;
+  }
+  const n = doneCount(), inQuiz = mode === "quiz";
+  const initials = S.name.trim().split(/\s+/).map(w=>w[0]).slice(0,2).join("").toUpperCase();
+  topbar.innerHTML = `<div class="topbar-in">
+    <button class="brand" id="tbHome" ${inQuiz?"disabled":""} aria-label="Go to the learning map"><span class="brand-ic">🔐</span><span class="brand-t">Activity Lab<small>User Authentication</small></span></button>
+    <div class="tb-right">
+      <div class="tb-prog" title="Activities completed"><span>${n} of ${TOTAL} activities</span><div class="progress"><i style="width:${n/TOTAL*100}%"></i></div></div>
+      <div class="student"><span class="avatar">${esc(initials)}</span><span><b>${esc(S.name)}</b><small>Roll no. ${esc(S.roll)}</small></span></div>
+      ${inQuiz ? `<span class="pill warn">Quiz in progress</span>` : `<button class="btn btn-ghost btn-sm" id="tbMap">🗺️ Map</button>`}
+    </div></div>`;
+  const home = document.getElementById("tbHome"), map = document.getElementById("tbMap");
+  if(home && !inQuiz) home.addEventListener("click", () => go(screenOverview));
+  if(map) map.addEventListener("click", () => go(screenOverview));
+}
+
+function go(fn, ...args){ cleanup(); fn(...args); renderTop(); window.scrollTo(0,0); }
+
+/* ---------- Screens ---------- */
+function screenWelcome(){
+  mode = "welcome";
+  const has = !!S.name;
+  app.innerHTML = `<section class="screen stack">
+    <div class="card">
+      <div class="hero-grid">
+        <div>
+          <span class="tag">🎯 Interactive activity for beginners</span>
+          <h1 style="margin-top:14px">User Authentication</h1>
+          <p class="lead">Proving who someone is: the four factors, why passwords survive despite everything, and what tokens and biometrics actually add.</p>
+          <ul class="hero-facts">
+            <li>📚 3 lessons, 15 hands-on activities</li><li>💡 Free hints at every step</li>
+            <li>📝 Final quiz worth 15 marks</li><li>⏱️ About 45 to 60 minutes</li>
+          </ul>
+        </div>
+        <div class="keyring" aria-hidden="true">
+          <svg class="shield" viewBox="0 0 200 220"><defs><linearGradient id="g1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#93d3ac"/><stop offset="1" stop-color="#2e8b57"/></linearGradient></defs>
+            <path d="M100 10 L180 40 V110 C180 160 145 195 100 210 C55 195 20 160 20 110 V40 Z" fill="url(#g1)"/>
+            <path d="M100 30 L162 53 V110 C162 148 136 175 100 188 C64 175 38 148 38 110 V53 Z" fill="#ffffff" fill-opacity=".2"/>
+            <circle cx="100" cy="98" r="22" fill="#ffffff"/><rect x="92" y="104" width="16" height="42" rx="6" fill="#ffffff"/><circle cx="100" cy="98" r="9" fill="#2e8b57"/></svg>
+          <div class="ktag kt1">🧠 Know<small>password, PIN</small></div>
+          <div class="ktag kt2">💳 Have<small>card, phone</small></div>
+          <div class="ktag kt3">👁️ Are<small>finger, face</small></div>
+          <div class="ktag kt4">✍️ Do<small>voice, signature</small></div>
+        </div>
+      </div>
+    </div>
+    <div class="card" id="who"></div>
+  </section>`;
+  const who = document.getElementById("who");
+  if(has){
+    who.innerHTML = `<h3>Welcome back, ${esc(S.name)}!</h3>
+      <p>Roll no. <b>${esc(S.roll)}</b>. You’ve completed <b>${doneCount()} of ${TOTAL}</b> activities${S.results.length ? ` and taken the quiz ${S.results.length} time${S.results.length>1?"s":""}` : ""}.</p>
+      <div class="row wrap"><button class="btn" id="cont">Continue where I left off</button><button class="btn btn-ghost" id="newst">I’m a different student</button></div>`;
+    document.getElementById("cont").addEventListener("click", () => go(screenOverview));
+    document.getElementById("newst").addEventListener("click", () => { S = fresh(); save(); go(screenWelcome); });
+  } else {
+    who.innerHTML = `<h3>Before you begin</h3><p class="muted">Your name and roll number will appear on your result card at the end.</p>
+      <div class="who-grid">
+        <div class="field"><label for="nm">Full name</label><input class="input" id="nm" maxlength="60" autocomplete="name" placeholder="e.g. Sana Khan"></div>
+        <div class="field"><label for="rl">Roll number</label><input class="input" id="rl" maxlength="30" autocomplete="off" placeholder="e.g. 23CS045"></div>
+        <button class="btn" id="startBtn">Start the activity</button>
+      </div><div class="err" id="err" aria-live="polite"></div>`;
+    const nm = document.getElementById("nm"), rl = document.getElementById("rl"), err = document.getElementById("err");
+    function start(){
+      const n = nm.value.trim().replace(/\s+/g," "), r = rl.value.trim();
+      if(n.length < 2){ err.textContent = "Enter your full name (at least 2 letters)."; nm.focus(); return; }
+      if(r.length < 2){ err.textContent = "Enter your roll number."; rl.focus(); return; }
+      if(!/^[A-Za-z0-9\-\/_. ]+$/.test(r)){ err.textContent = "Roll numbers can use letters, numbers, dashes, slashes and dots only."; rl.focus(); return; }
+      S = fresh(); S.name = n; S.roll = r; save(); go(screenOverview);
+    }
+    document.getElementById("startBtn").addEventListener("click", start);
+    [nm, rl].forEach(x => x.addEventListener("keydown", e => { if(e.key === "Enter") start(); }));
+    nm.focus();
+  }
+}
+
+function modInfo(m){
+  const cnt = [0,1,2,3,4].filter(i => S.done[m*5+i]).length;
+  const unlocked = m === 0 || S.maxPos >= m*5 - 1;
+  const started = S.maxPos >= m*5;
+  let target = m*5; for(let i=0;i<5;i++){ if(!S.done[m*5+i]){ target = m*5+i; break; } }
+  if(target > S.maxPos + 1) target = Math.max(m*5, Math.min(S.maxPos, m*5+4));
+  return {cnt, unlocked, started, target};
+}
+
+function screenOverview(){
+  mode = "map";
+  const first = S.name.split(" ")[0];
+  const quizOpen = S.maxPos >= 14;
+  const res = S.results;
+  const best = res.length ? Math.max(...res.map(r=>r.score)) : null;
+  app.innerHTML = `<section class="screen stack">
+    <div class="card">
+      <span class="tag">👋 Hello, ${esc(first)}</span>
+      <h2 style="margin-top:12px">What this activity is about</h2>
+      <p>Every time you log in to the university portal, your bank app or your phone, a computer has to answer one question: <b>“Are you really who you say you are?”</b> That question is <b>user authentication</b>, the front door of information security. If it fails, every other protection behind it can be bypassed.</p>
+      <p>You won’t just read about it here. You’ll sort, click, type, slide and even attack your way through the ideas. Every button gives you instant feedback, and hints are always free.</p>
+    </div>
+    <div class="card">
+      <h3>By the end, you will be able to:</h3>
+      <ol class="objectives">
+        <li>Explain the difference between identification and verification.</li>
+        <li>Describe the NIST model of registration, credential and authentication, and its roles.</li>
+        <li>Classify any login method into one of the four factors and spot true multi-factor authentication.</li>
+        <li>Explain how systems store passwords using hashing and salt.</li>
+        <li>Recognise the eight classic password attacks and their defences.</li>
+        <li>Explain why passwords survive despite their weaknesses, and how to choose strong ones.</li>
+        <li>Compare memory cards, smart cards and one-time password tokens.</li>
+        <li>Explain biometric accuracy using false match and false non-match rates.</li>
+        <li>Walk through a challenge–response login and explain why replay attacks fail.</li>
+      </ol>
+    </div>
+    <div class="card">
+      <h3>Your learning path</h3>
+      <p class="muted small">Lessons unlock one after another. You can return to any finished lesson.</p>
+      <div class="journey" id="journey"></div>
+    </div>
+    <div class="card">
+      <h3>How you’ll be marked</h3>
+      <div class="tablewrap"><table class="marks">
+        <thead><tr><th>Part</th><th>What it is</th><th>Marks</th></tr></thead>
+        <tbody>
+          <tr><td>Activities</td><td>15 hands-on activities across 3 lessons</td><td>Not graded; your completion count appears on your result card</td></tr>
+          <tr><td>Final quiz</td><td>15 multiple-choice questions, 1 mark each</td><td><b>15 marks</b></td></tr>
+          <tr><td>Pass mark</td><td>9 out of 15 (60%)</td><td>–</td></tr>
+          <tr><td>Grades</td><td>13–15 Excellent (A), 11–12 Very good (B), 9–10 Pass (C), 0–8 Needs revision</td><td>–</td></tr>
+        </tbody></table></div>
+      <p class="small muted" style="margin-top:10px">The quiz unlocks when you reach the end of Lesson 3. Questions appear in a random order, there are no hints, and each answer is locked once you submit it. Every attempt is numbered on your result card.</p>
+    </div>
+    <div class="card">
+      <h3>How each step works</h3>
+      <div class="howto">
+        <div><span class="ic">📖</span><b>Learn</b><br><span class="small">Read a short explanation with an everyday example.</span></div>
+        <div><span class="ic">🎯</span><b>Try it</b><br><span class="small">Do the activity: click, sort, type or slide.</span></div>
+        <div><span class="ic">💡</span><b>Use hints</b><br><span class="small">Stuck? Hints are free and come one at a time.</span></div>
+        <div><span class="ic">✅</span><b>Get feedback</b><br><span class="small">Every answer tells you why it’s right or wrong.</span></div>
+      </div>
+    </div>
+  </section>`;
+  const j = document.getElementById("journey");
+  MODULES.forEach((mod, m) => {
+    const info = modInfo(m);
+    const btnLabel = !info.unlocked ? "🔒 Locked" : info.cnt === 5 ? "Review" : info.started ? "Continue" : "Start";
+    const card = el(`<div class="jcard ${info.unlocked?"":"locked"}">
+      <div class="jnum">${m+1}</div>
+      <div><div class="jtitle">${mod.icon} ${mod.title}</div><div class="small muted">${mod.blurb}</div>
+        <div class="jmeta"><span class="pill">5 activities</span><span class="pill">About 12 minutes</span><span class="pill">${info.cnt} of 5 done</span></div>
+        <div class="progress"><i style="width:${info.cnt*20}%"></i></div>
+        ${info.unlocked ? "" : `<div class="small muted" style="margin-top:6px">Reach the end of Lesson ${m} to unlock.</div>`}</div>
+      <button class="btn ${info.cnt===5?"btn-ghost":""} btn-sm" ${info.unlocked?"":"disabled"}>${btnLabel}</button></div>`);
+    card.querySelector("button").addEventListener("click", () => go(screenStep, info.target));
+    j.appendChild(card);
+  });
+  const qc = el(`<div class="jcard quiz ${quizOpen?"":"locked"}">
+    <div class="jnum">📝</div>
+    <div><div class="jtitle">Final quiz</div><div class="small muted">15 questions covering all three lessons, 1 mark each.</div>
+      <div class="jmeta"><span class="pill">15 marks</span><span class="pill">Pass: 9</span>${res.length ? `<span class="pill">First attempt: ${res[0].score}/15</span><span class="pill">Best: ${best}/15</span>` : ""}</div>
+      ${quizOpen ? "" : `<div class="small muted">Reach the end of Lesson 3 to unlock.</div>`}</div>
+    <button class="btn btn-sm" ${quizOpen?"":"disabled"}>${quizOpen ? (res.length ? "Retake quiz" : "Take the quiz") : "🔒 Locked"}</button></div>`);
+  qc.querySelector("button").addEventListener("click", () => go(screenQuizIntro));
+  j.appendChild(qc);
+}
+
+function screenStep(pos){
+  mode = "step";
+  const m = Math.floor(pos/5), s = pos % 5, mod = MODULES[m], st = mod.steps[s];
+  if(pos > S.maxPos){ S.maxPos = pos; save(); }
+  const done = !!S.done[pos];
+  const nextLabel = d => d ? (s < 4 ? "Continue" : "Finish lesson") : "Skip for now";
+  app.innerHTML = `<section class="screen stack">
+    <div class="card">
+      <div class="crumbs"><span class="pill">${mod.icon} Lesson ${m+1}</span><span>${mod.title}</span></div>
+      <div class="step-title"><h2>${st.title}</h2><span class="muted">Step ${s+1} of 5</span></div>
+      <div class="progress"><i style="width:${(s+1)/5*100}%"></i></div>
+    </div>
+    <div class="card">
+      <div class="sec-tag">📖 Learn</div>
+      ${st.concept}
+      <div class="key">🔑 <b>Key idea:</b> ${st.key}</div>
+    </div>
+    <div class="card activity ${done?"is-done":""}" id="act">
+      <div class="act-head"><div class="sec-tag">🎯 Activity</div><span class="done-badge">✓ Completed</span></div>
+      <p class="task-text">${st.task}</p>
+      <div id="actBody"></div>
+      <div class="hint-area"><button class="btn btn-sm hint-btn" id="hintBtn">💡 Show a hint</button><div id="hints"></div></div>
+    </div>
+    <div class="card stepnav">
+      <button class="btn btn-ghost" id="back">◀ Back</button>
+      <div class="dots" id="dots" aria-hidden="true"></div>
+      <button class="btn ${done?"":"btn-skip"}" id="next">${nextLabel(done)} ▶</button>
+    </div>
+  </section>`;
+  const act = document.getElementById("act"), nextBtn = document.getElementById("next");
+  function drawDots(){ document.getElementById("dots").innerHTML = [0,1,2,3,4].map(i => `<i class="${i===s?"on":""} ${S.done[m*5+i]?"ok":""}"></i>`).join(""); }
+  drawDots();
+  const api = { complete(){
+    if(!S.done[pos]){ S.done[pos] = true; save(); }
+    act.classList.add("is-done"); nextBtn.classList.remove("btn-skip"); nextBtn.innerHTML = nextLabel(true) + " ▶";
+    drawDots(); renderTop();
+  }};
+  let hi = 0; const hb = document.getElementById("hintBtn"), hbox = document.getElementById("hints");
+  hb.addEventListener("click", () => {
+    if(hi >= st.hints.length) return;
+    hbox.appendChild(el(`<div class="hintbox"><b>Hint ${hi+1} of ${st.hints.length}:</b> ${st.hints[hi]}</div>`));
+    hi++;
+    if(hi >= st.hints.length){ hb.disabled = true; hb.textContent = "No more hints"; } else hb.textContent = "💡 Show another hint";
+  });
+  try{ const r = st.activity(document.getElementById("actBody"), api); if(r && r.catch) r.catch(e => console.error(e)); }catch(e){ console.error(e); }
+  document.getElementById("back").addEventListener("click", () => go(s > 0 ? () => screenStep(pos-1) : screenOverview));
+  nextBtn.addEventListener("click", () => go(s < 4 ? () => screenStep(pos+1) : () => screenModuleDone(m)));
+}
+
+function screenModuleDone(m){
+  mode = "done";
+  const mod = MODULES[m], cnt = [0,1,2,3,4].filter(i => S.done[m*5+i]).length;
+  app.innerHTML = `<section class="screen card done-card">
+    <div class="medal">${cnt === 5 ? "🏅" : "🎓"}</div>
+    <h2 style="margin-top:10px">Lesson ${m+1} complete!</h2>
+    <p class="lead">${mod.title}</p>
+    <span class="pill">${cnt} of 5 activities completed</span>
+    <div class="takeaways"><h3>What you learned</h3><ul>${mod.takeaways.map(t=>`<li>${t}</li>`).join("")}</ul></div>
+    ${cnt < 5 ? `<p class="muted">You skipped ${5-cnt} ${5-cnt===1?"activity":"activities"}. You can go back to them any time from the map.</p>` : ""}
+    <div class="row wrap center"><button class="btn btn-ghost" id="toMap">🗺️ Back to map</button><button class="btn" id="nextMod">${m < 2 ? `Start Lesson ${m+2}` : "Go to the final quiz"} ▶</button></div>
+  </section>`;
+  if(cnt === 5) confetti();
+  document.getElementById("toMap").addEventListener("click", () => go(screenOverview));
+  document.getElementById("nextMod").addEventListener("click", () => go(m < 2 ? () => screenStep((m+1)*5) : screenQuizIntro));
+}
+
+function screenQuizIntro(){
+  mode = "map";
+  const n = doneCount();
+  app.innerHTML = `<section class="screen card">
+    <span class="tag">📝 Final quiz</span>
+    <h2 style="margin-top:12px">Ready to test yourself, ${esc(S.name.split(" ")[0])}?</h2>
+    <div class="tablewrap" style="margin:14px 0"><table class="marks"><tbody>
+      <tr><th>Questions</th><td>15 multiple-choice questions from all three lessons</td></tr>
+      <tr><th>Marks</th><td>1 mark per correct answer, <b>15 marks</b> in total</td></tr>
+      <tr><th>Pass mark</th><td>9 out of 15 (60%)</td></tr>
+      <tr><th>Rules</th><td>No hints. Questions are shuffled. Once you submit an answer it is locked, and you’ll see the explanation straight away.</td></tr>
+      <tr><th>This attempt</th><td>Attempt number ${S.results.length + 1}${S.results.length ? `. Your first attempt scored ${S.results[0].score}/15` : ""}</td></tr>
+    </tbody></table></div>
+    ${n < TOTAL ? `<div class="feedback">You’ve completed ${n} of ${TOTAL} activities. You can still take the quiz, but finishing the activities first will help.</div>` : `<div class="feedback good">You completed all 15 activities. Great preparation!</div>`}
+    <div class="row wrap" style="margin-top:16px"><button class="btn btn-ghost" id="qback">🗺️ Back to map</button><button class="btn" id="qgo">Start the quiz ▶</button></div>
+  </section>`;
+  document.getElementById("qback").addEventListener("click", () => go(screenOverview));
+  document.getElementById("qgo").addEventListener("click", () => { Q = { qs: shuffle(QUIZ).map(q => Object.assign({}, q, {order: shuffle([0,1,2,3])})), i:0, score:0, answers:[], start:Date.now() }; go(screenQuestion); });
+}
+
+let Q = null;
+function screenQuestion(){
+  mode = "quiz";
+  const q = Q.qs[Q.i]; let sel = null, locked = false;
+  app.innerHTML = `<section class="screen card">
+    <div class="row between wrap"><span class="pill">Question ${Q.i+1} of ${Q.qs.length}</span><span class="pill">Score so far: ${Q.score}</span></div>
+    <div class="progress" style="margin-top:12px"><i style="width:${Q.i/Q.qs.length*100}%"></i></div>
+    <p class="small muted" style="margin:14px 0 0">${q.topic}</p>
+    <h3 class="qprompt">${q.q}</h3>
+    <div class="qopts">${q.order.map((oi,k) => `<button class="qopt" data-oi="${oi}"><span class="letter">${"ABCD"[k]}</span><span>${q.o[oi]}</span></button>`).join("")}</div>
+    <div id="qfb" aria-live="polite"></div>
+    <div class="row end" style="margin-top:16px"><button class="btn" id="qsub" disabled>Submit answer</button></div>
+  </section>`;
+  const sub = document.getElementById("qsub"), btns = app.querySelectorAll(".qopt");
+  btns.forEach(b => b.addEventListener("click", () => {
+    if(locked) return;
+    btns.forEach(x => x.classList.remove("sel")); b.classList.add("sel"); sel = +b.dataset.oi; sub.disabled = false;
+  }));
+  sub.addEventListener("click", () => {
+    if(!locked){
+      if(sel === null) return;
+      locked = true;
+      const ok = sel === q.a; if(ok) Q.score++;
+      Q.answers.push({q: q.q, chosen: q.o[sel], correct: q.o[q.a], ok, ex: q.ex});
+      btns.forEach(x => { x.disabled = true; const oi = +x.dataset.oi; if(oi === q.a) x.classList.add("right"); else if(oi === sel) x.classList.add("wrong"); x.classList.remove("sel"); });
+      document.getElementById("qfb").innerHTML = `<div class="feedback ${ok?"good":"bad"}"><b>${ok ? "✅ Correct! +1 mark." : "❌ Not this time."}</b> ${q.ex}</div>`;
+      sub.textContent = Q.i + 1 < Q.qs.length ? "Next question ▶" : "See my result 🎉";
+    } else {
+      if(Q.i + 1 < Q.qs.length){ Q.i++; go(screenQuestion); }
+      else finishQuiz();
+    }
+  });
+}
+
+function finishQuiz(){
+  const ms = Date.now() - Q.start;
+  const r = { score:Q.score, total:15, pct:Math.round(Q.score/15*100), ms, date:new Date().toISOString(), attempt:S.results.length+1, activities:doneCount() };
+  S.results.push(r); save();
+  go(screenResult, r, Q.answers);
+}
+
+function screenResult(r, answers){
+  mode = "result";
+  const g = gradeOf(r.score), pass = r.score >= 9;
+  const mins = Math.floor(r.ms/60000), secs = Math.round((r.ms%60000)/1000);
+  const when = new Date(r.date).toLocaleString();
+  const text = `User Authentication – Activity Result
+Name: ${S.name}
+Roll no.: ${S.roll}
+Quiz score: ${r.score}/15 (${r.pct}%)
+Grade: ${g.g} (${g.t}) – ${pass ? "PASS" : "Needs revision"}
+Activities completed: ${r.activities}/15
+Attempt: ${r.attempt}
+Time taken: ${mins} min ${secs} s
+Date: ${when}`;
+  app.innerHTML = `<section class="screen stack">
+    <div class="card cert">
+      <div class="row between wrap"><span class="tag">🏆 Result card</span><span class="pill">Attempt ${r.attempt}</span></div>
+      <h2 style="margin-top:12px">User Authentication: activity result</h2>
+      <div class="result-grid">
+        <div class="ring" style="--p:${r.pct}"><div><div><b>${r.score}</b><span>out of 15</span></div></div></div>
+        <div class="kv">
+          <div><small>Student</small><b>${esc(S.name)}</b></div>
+          <div><small>Roll no.</small><b>${esc(S.roll)}</b></div>
+          <div><small>Percentage</small><b>${r.pct}%</b></div>
+          <div><small>Grade</small><b>${g.g} (${g.t})</b></div>
+          <div><small>Status</small><b class="${pass?"status-pass":"status-fail"}">${pass ? "✅ Pass" : "📚 Needs revision"}</b></div>
+          <div><small>Activities completed</small><b>${r.activities} of 15</b></div>
+          <div><small>Time taken</small><b>${mins} min ${secs} s</b></div>
+          <div><small>Date and time</small><b>${esc(when)}</b></div>
+        </div>
+      </div>
+      <p class="small muted" style="margin-top:14px">📸 If your teacher asks for proof, take a screenshot of this card or copy the result text.</p>
+      <div class="row wrap"><button class="btn" id="copy">📋 Copy result text</button><button class="btn btn-ghost" id="retake">🔁 Retake quiz</button><button class="btn btn-ghost" id="rmap">🗺️ Back to map</button></div>
+      <div id="copyArea"></div>
+    </div>
+    <div class="card">
+      <h3>Review your answers</h3>
+      <ol class="review">${answers.map(a => `<li><b>${a.q}</b><br>
+        <span class="${a.ok?"yes":"no"}">${a.ok ? "✓" : "✗"} Your answer: ${a.chosen}</span>
+        ${a.ok ? "" : `<br><span class="yes">✓ Correct answer: ${a.correct}</span>`}
+        <div class="small muted" style="margin-top:4px">${a.ex}</div></li>`).join("")}</ol>
+    </div>
+  </section>`;
+  if(pass) confetti();
+  const copyBtn = document.getElementById("copy");
+  copyBtn.addEventListener("click", () => {
+    const fallback = () => {
+      const ca = document.getElementById("copyArea");
+      ca.innerHTML = `<p class="small muted" style="margin-top:12px">Copying isn’t allowed here, so select the text below and copy it yourself.</p><textarea class="copybox" readonly></textarea>`;
+      const ta = ca.querySelector("textarea"); ta.value = text; ta.focus(); ta.select();
+    };
+    try{
+      if(navigator.clipboard && navigator.clipboard.writeText){
+        navigator.clipboard.writeText(text).then(() => { copyBtn.textContent = "✓ Copied"; setTimeout(() => copyBtn.textContent = "📋 Copy result text", 2000); }).catch(fallback);
+      } else fallback();
+    }catch(e){ fallback(); }
+  });
+  document.getElementById("retake").addEventListener("click", () => go(screenQuizIntro));
+  document.getElementById("rmap").addEventListener("click", () => go(screenOverview));
+}
+
+/* ---------- Start ---------- */
+load();
+go(screenWelcome);
+})();
+</script>
+</body>
+</html>
